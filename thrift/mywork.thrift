@@ -2,6 +2,21 @@ namespace java com.maogogo.mywork.thrift
 #@namespace scala com.maogogo.mywork.thrift
 
 typedef string SHARD_ID
+typedef string TABLE_ID
+typedef string PROPERTY_ID
+
+enum ErrorCode {
+  META_ERROR = 1
+  ROOT_ERROR = 2
+  MERGER_ERROR = 3
+  LEAF_ERROR = 4
+  SYS_ERROR = 9
+}
+
+exception ServiceException {
+  1: string error
+  2: optional ErrorCode code
+}
 
 #struct
 struct Cell {
@@ -14,210 +29,158 @@ struct Row {
   1: list<Cell> cells
 }
 
-enum Relating {
-  AND = 1
-  OR = 2
-}
-
-enum JoinOuter {
-  LEFT = 1
-  RIGHT = 2
-  INNER = 3
-  OUTER = 4
-}
-
-enum Sorted {
-  ASC = 1
-  DESC = 2
-}
-
-enum Aggregated {
-  COUNT = 1
-  SUM = 2
-  AVG = 3
-  MAX = 4
-  MIN = 5
+struct MasterOrSlave {
+  1: i32 master_or_slave = 0
+  2: optional i32 partition_random_index
 }
 
 struct Paging {
   1: i32 offset
   2: i32 limit
+  3: optional map<SHARD_ID, i32>  skips
 }
 
-struct Selecting {
-  1: string cell_label
-  2: optional Aggregated aggregated
+struct ServiceWatcher {
+  1: i64 timeout
+  2: i64 total_rows
+  3: bool success
+  4: optional string memo
 }
 
-enum Judgment {
-  EQ = 1
-  GT = 2
-  GE = 3
-  LT = 4
-  LE = 5
-  NE = 6
-  LK = 7
-  IN = 8
+struct Table {
+  1: TABLE_ID id
+  2: string db_table_name
+  3: optional bool is_listing
+  4: optional string db_schema
+  5: optional string force_index
 }
 
-struct Filtering {
-  1: string cell_label
-  2: string cell_value
-  3: optional Judgment judgment 
-  3: optional Relating relating
+struct SqlEngine {
+  1: string sql
+  2: optional list<string> params
+  3: i32 grouping_columns
 }
 
-struct FilterBinding {
-  1: list<Filtering> filerings
-  2: Relating relating
+struct PropertyBinding {
+  1: PROPERTY_ID property_id
+  2: optional list<string> property_values
 }
 
-struct Sorting {
-  1: string cell_label
-  2: optional Sorted sorted
+enum PropertyType {
+  SELECTING = 1
+  GROUPING = 2
+  FILTERING = 3
+  COMBINING = 4
 }
 
-struct QueryBinding {
-  1: optional list<Selecting> selectings	#select 字段
-  2: optional list<FilterBinding> filter_bindings	#where条件
-  3: optional list<string> groupings	#分组
-  4: optional list<Sorting> sortings	#排序
-  5: optional list<string> havings	#暂不支持
+struct PropertyCell {
+  1: PROPERTY_ID id
+  2: string label
+  3: string cell_column
+  4: string cell_label
+  5: optional string property_filters
+  6: optional bool is_in_use = false
+  7: optional list<string> property_values
+}
+
+# PropertyFiltering
+struct PropertySelecting {
+  1:  PropertyCell property_cell
+  2:  optional string cell_expression
+  3:  optional string aggregation_method
+  4:  optional string value_display_format
+  5:  optional string table_ex
+  6:  optional string unique_columns
+  7:  bool is_fixed_show = false
+  8:  optional string formula_script
+  9:  optional string parent_id
+}
+
+struct PropertyGrouping {
+  1: PropertyCell property_cell
+  2: optional string value_display_key
+}
+
+struct PropertyFiltering {
+  1: PropertyCell property_cell
+}
+
+struct PropertyCombining {
+  1: PropertyCell property_cell
+  2: optional string relate_ids
+}
+
+union Property {
+  1: PropertyGrouping grouping
+  2: PropertySelecting selecting
+  3: PropertyFiltering filtering
+  4: PropertyCombining combining
+}
+
+struct TableProperty {
+  1: Table table
+  2: list<Property> properties
+}
+
+struct TablePropertyData {
+  1: list<TableProperty> table_properties
 }
 
 struct RootQueryReq {
-  1: string table_name
-  2: optional string alias
-  3: optional string db_source
-  4: optional QueryBinding query_binding
-  5: optional JoinOuter join_outer
-  6: optional Paging paging
+  1: TABLE_ID table_id
+  2: optional list<PropertyBinding> selecting
+  3: optional list<PropertyBinding> grouping
+  4: optional list<PropertyBinding> filtering
+  5: optional Paging paging
+  6: optional MasterOrSlave master_or_slave
 }
 
-struct RootUnionQueryReq {
-  1: list<RootQueryReq> queries
-  2: optional QueryBinding query_binding
-}
-
-enum Stutus {
-  SUCCESS = 1
-  ERROR = 9 
-}
-
-struct Running {
-  1: SHARD_ID shard_id
-  2: Stutus status
-  3: i64 total_record
-  4: i64 timeout
-  5: optional string memo
+struct CellHeader {
+  1: string label
+  2: optional string parent_label
+  3: optional i32 cell_index
+  4: optional i32 row_span
+  5: optional i32 col_span
+  6: optional i32 parent_row_span
+  7: optional i32 parent_col_span
 }
 
 struct RootQueryResp {
-  1: list<Row> rows
-  2: i64 total_record
-  3: optional map<SHARD_ID, Running> running_map
+  1: string query_id
+  2: list<CellHeader> cell_headers
+  3: list<Row> rows
+  4: optional list<Cell> summary_row
 }
 
-enum StructType {
-  BOOL = 1
-  VARCHAR = 2
-  VARCHAR2 = 3
-  CHAR = 4
-  DATE = 5
-  INT = 6
-  FLOAT = 7
+service MetaService {
+  string getRandomCache() throws (ServiceException e)
+  i32 getRandomPartition() throws (ServiceException e)
 }
 
-struct StructField {
-  1: string label
-  2: optional StructType struct_type
-  3: bool is_primary_key = false
-  4: bool is_null_able = true
-  5: optional i32 precision
-  6: optional i32 scale
-}
-
-struct RootExecuteReq {
-  1: string table_name
-  2: optional string db_source
-  3: optional list<StructField> struct_fields
-  4: optional string chartset
-}
-
-struct RootExecuteResp {
-  1: i64 total_record
-}
-
-struct RootInsertReq {
-  1: string table_name 
-  2: list<StructField> struct_fields
-  3: optional string db_source
-}
-
-struct RootUpdateReq {
-  1: string table_name
-  2: list<StructField> struct_fields
-  3: list<StructField> key_struct_fields
-  4: optional string db_source
-}
-
-struct RootDeleteReq {
-  1: string table_name
-  2: list<StructField> key_struct_fields
-  3: optional string db_source
-}
-
-struct ExecuteUpdateReq {
-  1: string sql
-  2: optional list<string> params
-  3: optional string db_source
-  4: optional string chartset
-}
-
-struct ExecuteQueryReq {
-  1: string sql
-  2: optional list<string> params
-  3: optional i32 grouing_columns
-  4: optional string db_source
+service EngineService {
+  list<SqlEngine> engining(RootQueryReq req) throws (ServiceException e)
 }
 
 service RootService {
-  RootExecuteResp execute(RootExecuteReq req)
-  RootExecuteResp insert(RootInsertReq req)
-  RootExecuteResp update(RootUpdateReq req)
-  RootExecuteResp delete(RootDeleteReq req)
-  RootQueryResp selectOne(RootQueryReq req)
-  RootQueryResp selectUnion(RootUnionQueryReq req)
-  RootExecuteResp executeUpdate(ExecuteUpdateReq req)
-  RootQueryResp executeQuery(ExecuteQueryReq req)
-}
-
-struct MergerExecuteReq {
-  1: string sql
-  2: optional list<string> params
-  3: optional string db_source
-  4: optional string chartset
-}
-
-struct MergerExecuteResp {
-  1: i64 total_record
-  2: optional map<SHARD_ID, Running> running_map
+  RootQueryResp queryReport(RootQueryReq req) throws (ServiceException e)
 }
 
 struct MergerQueryReq {
   1: string sql
   2: optional list<string> params
-  3: optional i32 grouing_columns
-  4: optional string db_source
+  3: i32 grouping_columns
+  4: optional MasterOrSlave master_or_slave
 }
 
 struct MergerQueryResp {
   1: list<Row> rows
-  2: i64 total_record
-  3: optional map<SHARD_ID, Running> running_map
+  2: map<SHARD_ID, ServiceWatcher> watchers
 }
 
 service MergerService {
-  MergerExecuteResp executeUpdate(ExecuteUpdateReq req)
-  MergerQueryResp executeQuery(ExecuteQueryReq req)
+  MergerQueryResp queryReport(MergerQueryReq req) throws (ServiceException e)
 }
+
+service LeafService extends MergerService {
+}
+
