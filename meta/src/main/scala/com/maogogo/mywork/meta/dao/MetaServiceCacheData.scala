@@ -10,7 +10,7 @@ import com.maogogo.mywork.common.utils.UUID
 import com.maogogo.mywork.common.utils.DateUtil
 import org.slf4j.LoggerFactory
 
-class MetaServiceCacheData @Inject() (cacher: RedisBinaryCacheAccesser, dao: MetaServiceDao) {
+class MetaServiceCacheData @Inject() (dao: MetaServiceDao, cacher: RedisBinaryCacheAccesser) {
 
   lazy val Log = LoggerFactory.getLogger(getClass)
   lazy val TablePropertyKey = UUID.uuid()
@@ -47,14 +47,7 @@ class MetaServiceCacheData @Inject() (cacher: RedisBinaryCacheAccesser, dao: Met
         if (tableOption.isEmpty)
           throw new ServiceException(s"can not found table by id ${kv._1}", Some(ErrorCode.MetaError))
         val propertyIds = kv._2.map(_._2)
-        val propertySeq = properties.filter {
-          case Property.Selecting(s) => propertyIds.contains(s.propertyCell.id)
-          case Property.Grouping(g) => propertyIds.contains(g.propertyCell.id)
-          case Property.Filtering(f) => propertyIds.contains(f.propertyCell.id)
-          case Property.Combining(c) => propertyIds.contains(c.propertyCell.id)
-          case _ =>
-            throw new ServiceException(s"can not found properties by ids ${propertyIds.mkString(",")}", Some(ErrorCode.MetaError))
-        }
+        val propertySeq = properties.filter(x => propertyIds.contains(x.id))
 
         TableProperty(tableOption.get, propertySeq)
       } toSeq

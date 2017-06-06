@@ -12,6 +12,8 @@ import com.maogogo.mywork.root.service.RootServiceImpl
 trait ServicesModule extends TwitterModule with ConfigModule with RedisClusterModule {
 
   override def configure: Unit = {
+    bindSingleton[EngineService.FutureIface].toInstance(zookClient[EngineService.FutureIface]("engine"))
+    bindSingleton[MetaService.FutureIface].toInstance(zookClient[MetaService.FutureIface]("meta"))
     bindSingleton[RootService.FutureIface].to[RootServiceImpl]
   }
 

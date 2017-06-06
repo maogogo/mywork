@@ -24,7 +24,7 @@ final class RedisBinaryCacheAccesser @Inject() (client: RedisCluster) extends Ca
   }
 
   def write(ks: Bytes, vs: Bytes, ttl: Long): Future[Any] = {
-    Future.value(client.set(ks, vs, true, Seconds(ttl)))
+    Future.value(client.setex(ks, ttl, vs))
   }
 
   def zincBy(ks: Bytes, vs: Bytes): Future[Any] = {

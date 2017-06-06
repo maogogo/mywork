@@ -29,6 +29,16 @@ struct Row {
   1: list<Cell> cells
 }
 
+struct CellHeader {
+  1: string label
+  2: optional string parent_label
+  3: i32 cell_index
+  4: optional i32 row_span
+  5: optional i32 col_span
+  6: optional i32 parent_row_span
+  7: optional i32 parent_col_span
+}
+
 struct MasterOrSlave {
   1: i32 master_or_slave = 0
   2: optional i32 partition_random_index
@@ -55,10 +65,12 @@ struct Table {
   5: optional string force_index
 }
 
-struct SqlEngine {
+struct QuerySql {
   1: string sql
-  2: optional list<string> params
-  3: i32 grouping_columns
+  2: optional string count_sql
+  3: optional list<string> params
+  4: i32 grouping_columns
+  5: list<CellHeader> headers
 }
 
 struct PropertyBinding {
@@ -71,50 +83,35 @@ enum PropertyType {
   GROUPING = 2
   FILTERING = 3
   COMBINING = 4
+  UNKNOWN = 9
 }
 
-struct PropertyCell {
-  1: PROPERTY_ID id
-  2: string label
-  3: string cell_column
-  4: string cell_label
-  5: optional string property_filters
-  6: optional bool is_in_use = false
-  7: optional list<string> property_values
+struct PropertySupport {
+  1: optional list<string> values
+  2: optional bool is_using = false
 }
 
-# PropertyFiltering
-struct PropertySelecting {
-  1:  PropertyCell property_cell
-  2:  optional string cell_expression
-  3:  optional string aggregation_method
-  4:  optional string value_display_format
-  5:  optional string table_ex
-  6:  optional string unique_columns
-  7:  bool is_fixed_show = false
-  8:  optional string formula_script
-  9:  optional string parent_id
-}
-
-struct PropertyGrouping {
-  1: PropertyCell property_cell
-  2: optional string value_display_key
-}
-
-struct PropertyFiltering {
-  1: PropertyCell property_cell
-}
-
-struct PropertyCombining {
-  1: PropertyCell property_cell
-  2: optional string relate_ids
-}
-
-union Property {
-  1: PropertyGrouping grouping
-  2: PropertySelecting selecting
-  3: PropertyFiltering filtering
-  4: PropertyCombining combining
+struct Property {
+  1:  PROPERTY_ID id
+  2:  string label
+  3:  optional string parent_label
+  4:  PropertyType property_type
+  5:  string cell_column
+  6:  string cell_label
+  7:  i32 cell_index = 1000
+  8:  optional string cell_expression
+  9:  optional string aggregation_method
+  10: optional string cell_filters
+  11: optional string having_filters
+  12: optional string value_display_format
+  13: optional string value_display_key
+  14: optional string table_ex
+  15: optional string unique_columns
+  16: optional string level_columns
+  17: bool is_fixed_show = false
+  18: optional string formula_script
+  19: optional string relate_ids
+  20: optional PropertySupport support
 }
 
 struct TableProperty {
@@ -135,16 +132,6 @@ struct RootQueryReq {
   6: optional MasterOrSlave master_or_slave
 }
 
-struct CellHeader {
-  1: string label
-  2: optional string parent_label
-  3: optional i32 cell_index
-  4: optional i32 row_span
-  5: optional i32 col_span
-  6: optional i32 parent_row_span
-  7: optional i32 parent_col_span
-}
-
 struct RootQueryResp {
   1: string query_id
   2: list<CellHeader> cell_headers
@@ -158,7 +145,7 @@ service MetaService {
 }
 
 service EngineService {
-  list<SqlEngine> engining(RootQueryReq req) throws (ServiceException e)
+  list<QuerySql> engining(RootQueryReq req) throws (ServiceException e)
 }
 
 service RootService {

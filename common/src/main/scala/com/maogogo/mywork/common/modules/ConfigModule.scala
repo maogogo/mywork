@@ -18,7 +18,7 @@ trait ConfigModule { self =>
     provideClient(config.getString(s"rpc.client.${s}"))
   }
 
-  def provideClient[T: Manifest](path: String) = ThriftMux.client.newIface[T](s"zk2!${path}")
+  private[this] def provideClient[T: Manifest](path: String) = ThriftMux.client.newIface[T](s"zk2!${path}")
 
   def provideServices(injector: com.twitter.inject.Injector): Map[String, ThriftService] = ???
 

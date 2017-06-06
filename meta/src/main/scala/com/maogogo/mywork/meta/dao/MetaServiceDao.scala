@@ -10,7 +10,7 @@ import com.twitter.finagle.mysql.Row
 import com.maogogo.mywork.common.cache._
 import com.twitter.scrooge.BinaryThriftStructSerializer
 
-class MetaServiceDao @Inject() (@Named("connections") val connections: Seq[DataSourcePool]) extends BaseDao with ConnectionBuilder {
+class MetaServiceDao @Inject() (@Named("connections") val connections: Seq[DataSourcePool]) extends ConnectionBuilder {
 
   val shardId: Int = 0
 
@@ -42,35 +42,28 @@ class MetaServiceDao @Inject() (@Named("connections") val connections: Seq[DataS
     Some((row("table_id").asString, row("property_id").asString))
 
   private[this] def rowToProperty(row: Row): Option[Property] = {
-    val id = row("id").asString
-    val cell = PropertyCell(
-      id = id,
+    val cellType = PropertyType(row("cell_type").asInt)
+
+    Some(Property(
+      id = row("id").asString,
       label = row("label").asString,
+      propertyType = cellType,
       cellColumn = row("cell_column").asString,
       cellLabel = row("cell_label").asString,
-      propertyFilters = row("property_filters").asOptionString
-    )
-    row("cell_type").asInt match {
-      case PropertyType.Selecting.value =>
-        Some(Property.Selecting(PropertySelecting(
-          propertyCell = cell,
-          cellExpression = row("cell_exception").asOptionString,
-          aggregationMethod = row("aggregation_method").asOptionString,
-          valueDisplayFormat = row("value_display_format").asOptionString,
-          tableEx = row("table_ex").asOptionString,
-          uniqueColumns = row("unique_columns").asOptionString,
-          isFixedShow = row("is_fixed_show").asBool,
-          formulaScript = row("").asOptionString
-        )))
-      case PropertyType.Grouping.value =>
-        Some(Property.Grouping(PropertyGrouping(cell, None)))
-      case PropertyType.Filtering.value =>
-        Some(Property.Filtering(PropertyFiltering(cell)))
-      case PropertyType.Combining.value =>
-        Some(Property.Combining(PropertyCombining(cell)))
-      case _ =>
-        throw new ServiceException(s"can not found [${id}] property type", Some(ErrorCode.MetaError))
-    }
+      cellIndex = row("cell_index").asOptionInt.getOrElse(1000),
+      cellExpression = row("cell_expression").asOptionString,
+      aggregationMethod = row("aggregation_method").asOptionString,
+      cellFilters = row("cell_filters").asOptionString,
+      havingFilters = row("having_filters").asOptionString,
+      valueDisplayFormat = row("value_display_format").asOptionString,
+      valueDisplayKey = row("value_display_key").asOptionString,
+      tableEx = row("table_ex").asOptionString,
+      uniqueColumns = row("unique_columns").asOptionString,
+      levelColumns = row("level_columns").asOptionString,
+      isFixedShow = row("is_fixed_show").asOptionBool.getOrElse(false),
+      formulaScript = row("formula_script").asOptionString,
+      relateIds = row("relate_ids").asOptionString
+    ))
 
   }
 

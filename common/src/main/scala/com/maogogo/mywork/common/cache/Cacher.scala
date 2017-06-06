@@ -28,7 +28,7 @@ trait Cacher[K, KS, V, VS] {
     for {
       cachedOption <- get(key)
       cacheMissed = cachedOption.isEmpty
-      _ = if (cacheMissed) log.info("Cache missed for key: " + key) else log.info("Cache found for key: " + key)
+      _ = if (cacheMissed) log.info(s"Cache missed for key: ${key}") else log.info(s"Cache found for key: ${key}")
       fallbackOption <- if (cacheMissed) fallback else Future.value(cachedOption)
       recache = cacheMissed && fallbackOption.isDefined
       _ <- if (recache) put(key, fallbackOption.get) else Future.Unit
