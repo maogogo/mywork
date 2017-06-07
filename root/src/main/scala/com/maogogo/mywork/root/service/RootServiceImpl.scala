@@ -9,7 +9,12 @@ class RootServiceImpl @Inject() (meta: MetaService.FutureIface, engine: EngineSe
   def queryReport(req: RootQueryReq): Future[RootQueryResp] = {
 
     for {
-      x <- engine.engining(req)
+      x <- engine.engining(req) handle {
+        case e: Throwable =>
+          println("e => " + e.getMessage)
+          e.printStackTrace()
+          Seq.empty
+      }
     } yield {
       x.map { s =>
         println("=" * 50)

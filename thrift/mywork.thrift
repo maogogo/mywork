@@ -89,6 +89,7 @@ enum PropertyType {
 struct PropertySupport {
   1: optional list<string> values
   2: optional bool is_using = false
+  3: optional string parent_id
 }
 
 struct Property {
@@ -99,7 +100,7 @@ struct Property {
   5:  string cell_column
   6:  string cell_label
   7:  i32 cell_index = 1000
-  8:  optional string cell_expression
+  8:  optional string cell_expression			#只对清单查询有效
   9:  optional string aggregation_method
   10: optional string cell_filters
   11: optional string having_filters

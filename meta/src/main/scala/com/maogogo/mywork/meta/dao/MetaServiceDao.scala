@@ -16,6 +16,7 @@ class MetaServiceDao @Inject() (@Named("connections") val connections: Seq[DataS
 
   def findTableProperties(): Future[Seq[(String, String)]] = {
     val sql = s"select * from t_table_property"
+    println("=>>" + sql)
     build {
       _.prepare(sql)().map { resultSet { rowToTableProperty } }
     }
@@ -23,6 +24,7 @@ class MetaServiceDao @Inject() (@Named("connections") val connections: Seq[DataS
 
   def findProperties: Future[Seq[Property]] = {
     val sql = s"select * from t_property"
+    println("=>>" + sql)
     build {
       _.prepare(sql)().map { resultSet { rowToProperty } }
     }
@@ -33,6 +35,7 @@ class MetaServiceDao @Inject() (@Named("connections") val connections: Seq[DataS
    */
   def findTables: Future[Seq[Table]] = {
     val sql = s"select * from t_tables"
+    println("=>>" + sql)
     build {
       _.prepare(sql)().map { resultSet { rowToTable } }
     }

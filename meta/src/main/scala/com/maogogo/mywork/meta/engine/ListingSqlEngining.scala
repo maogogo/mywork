@@ -11,10 +11,10 @@ class ListingSqlEngining extends SqlEngining {
   }
 
   def getListSelectingAndFilteringResp(tableProperty: TableProperty, req: RootQueryReq): ListSelectingAndFilteringResp = {
-    val selecting1 = toCellLabel(tableProperty.properties).mkString(", ")
-    val selecting2 = toCellLabel(tableProperty.properties.filter(_.propertyType == PropertyType.Selecting)).mkString(", ")
+    val selecting1 = toListingLabel(tableProperty.properties).mkString(", ")
+    val selecting2 = toListingLabel(tableProperty.properties.filter(_.propertyType == PropertyType.Selecting)).mkString(", ")
 
-    val filtering = toProperty((req.filtering, tableProperty.properties)).map(_.map(toCellFilter))
+    val filtering = toSeqProperty((req.filtering, tableProperty.properties)).map(_.map(toCellFilter))
 
     val filter1 = filtering.map { _.filterNot { _._1.startsWith(QueryPrefix) } }
     val filter2 = filtering.map { _.filter { _._1.startsWith(QueryPrefix) } }

@@ -21,22 +21,24 @@ trait ConnectionBuilder extends BaseDao { self =>
    */
   def build[T](masterOrSlave: Int = 0, partitionRandomIndex: Int = 0)(fallback: TransactionsClient => Future[T]): Future[T] = {
 
+    val connSize = connections.size
     // 计算获取主从连接池
     val partitionIndex = masterOrSlave match {
       case 0 =>
         shardId match {
-          case 0 => new scala.util.Random().nextInt(connections.size)
-          case _ => (shardId + partitionRandomIndex) % connections.size
+          case 0 => new scala.util.Random().nextInt(connSize)
+          case _ => (shardId + partitionRandomIndex) % connSize
           //connections.size % shardId + new scala.util.Random().nextInt(2)
         }
       case 1 => 0
-      case _ => new scala.util.Random().nextInt(connections.size - 1) + 1
+      case _ => new scala.util.Random().nextInt(connSize - 1) + 1
     }
 
     val pool = connections(partitionIndex)
+    val poolSize = pool.clients.size
 
     //随机获取连接
-    val serialIndex = new scala.util.Random().nextInt(pool.clients.size)
+    val serialIndex = new scala.util.Random().nextInt(poolSize)
 
     Futures.flatten(for {
       i <- pool.testing match {
@@ -46,13 +48,14 @@ trait ConnectionBuilder extends BaseDao { self =>
             Seq(-1)
         }
         case _ =>
-          log.info(s"mysql is testing false, using [partiton: ${partitionIndex}, serialIndex: ${serialIndex}]")
+          log.info(s"mysql is testing false, size: [connection: ${connSize}, pool: ${poolSize}] using [partiton: ${partitionIndex}, serialIndex: ${serialIndex}]")
           Future.value(Seq(serialIndex))
       }
       j = i.headOption match {
         case Some(x) if x != -1 => x
-        case _ => getConnectionIndex(pool.clients.size, serialIndex)
+        case _ => getConnectionIndex(poolSize, serialIndex)
       }
+      _ = log.info(s"refind the serialIndex = ${serialIndex}")
     } yield fallback(pool.clients(j)))
 
   }

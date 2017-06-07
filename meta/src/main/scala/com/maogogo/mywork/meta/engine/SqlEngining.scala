@@ -22,21 +22,25 @@ trait SqlEngining {
 """
   }
 
-  def toProperty: PartialFunction[(Option[Seq[PropertyBinding]], Seq[Property]), Option[Seq[Property]]] = {
+  def toSeqProperty: PartialFunction[(Option[Seq[PropertyBinding]], Seq[Property]), Option[Seq[Property]]] = {
     case (bindings, properties) =>
-      bindings.map {
-        _.map { bind =>
-          val propertyOption = properties.find(_.id == bind.propertyId)
-          if (propertyOption.isEmpty) {
-            Log.error(s"can not found property for table by${bind.propertyId}")
-            throw new ServiceException(s"can not found property for table by ${bind.propertyId}", Some(ErrorCode.MetaError))
-          }
-          propertyOption.get.copy(support = Some(PropertySupport(values = bind.propertyValues)))
-        }
-      }
+      bindings.map { _.map(toProperty(None)(_, properties)) }
   }
 
-  def toCellLabel: PartialFunction[Seq[Property], Seq[String]] = {
+  def toProperty(parentId: Option[String] = None): PartialFunction[(PropertyBinding, Seq[Property]), Property] = {
+    case (bind, properties) =>
+      val propertyOption = properties.find(_.id == bind.propertyId)
+      if (propertyOption.isEmpty) {
+        Log.error(s"can not found property for table by${bind.propertyId}")
+        throw new ServiceException(s"can not found property for table by ${bind.propertyId}", Some(ErrorCode.MetaError))
+      }
+      propertyOption.get.copy(support = Some(PropertySupport(values = bind.propertyValues, parentId = parentId)))
+  }
+
+  /**
+   * 这个方法只对 listing sql 有效
+   */
+  def toListingLabel: PartialFunction[Seq[Property], Seq[String]] = {
     case cells =>
       cells.sortBy(_.cellIndex).map { cell =>
         cell.cellExpression match {

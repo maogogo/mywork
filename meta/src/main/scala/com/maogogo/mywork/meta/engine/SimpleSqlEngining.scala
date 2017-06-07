@@ -6,35 +6,46 @@ class SimpleSqlEngining extends SqlEngining {
 
   def packing(tableProperty: TableProperty, req: RootQueryReq): Seq[QuerySql] = {
 
-    val grouping = toProperty(req.grouping, tableProperty.properties)
-    val selecting = toProperty(req.selecting, tableProperty.properties)
-    val filtering = toProperty(req.filtering, tableProperty.properties)
+    val grouping = toSeqProperty(req.grouping, tableProperty.properties)
+    val selecting = toSeqProperty(req.selecting, tableProperty.properties)
+    val filtering = toSeqProperty(req.filtering, tableProperty.properties)
+
+    val relateSelecting = selecting.map(_.filter(_.propertyType == PropertyType.Combining).flatMap { p =>
+      p.relateIds.map {
+        _.split(",").map { id =>
+          toProperty(Some(p.id))(PropertyBinding(id), tableProperty.properties)
+        }
+      }
+    } flatten)
 
     if (selecting.isEmpty)
       throw new ServiceException("query has no selectings", Some(ErrorCode.MetaError))
 
-    toSimpleSql(tableProperty.table.dbTableName, grouping, selecting.get, filtering)
+    toSimpleSql(tableProperty.table.dbTableName, grouping, (selecting.get ++ relateSelecting.getOrElse(Seq.empty)), filtering)
   }
 
   def toSimpleSql(tableName: String, grouping: Option[Seq[Property]], selecting: Seq[Property], filtering: Option[Seq[Property]]): Seq[QuerySql] = {
 
     //指标分组
+    //TODO 这里应该加入相关联的指标
     val selectingGroup = getSelectingGroup(selecting)
     //表头
     val headers = getCellHeader(grouping, selecting)
 
     selectingGroup.map { gs =>
+      println("gs ====>>>" + gs.selecting.size)
       //GroupBy 字段
       val groupColumn = toGroupingColumn(grouping).getOrElse(Seq.empty)
       //两层SQL语句
-      val isSecondLevel = gs.uniqueColumns match {
-        case Some(h) if h.size > 0 => false
+      val isThirdLevel = gs.uniqueColumns match {
+        case Some(h) if h.size > 0 => true
         case _ => true
       }
+      println("isSecondLevel ===>>." + isThirdLevel)
       //指标字段标签
-      val selectingLabel1 = isSecondLevel match {
-        case false => toSelectingColumn(gs.selecting)
-        case _ => toSelectingLabel(gs.selecting)
+      val selectingLabel1 = isThirdLevel match {
+        case false => toSelectingLabel(gs.selecting) //max
+        case _ => toSelectingColumn(!isThirdLevel)(gs.selecting)
       }
 
       //第一层维度字段及指标聚合函数
@@ -43,19 +54,17 @@ class SimpleSqlEngining extends SqlEngining {
         gs.levelColumns.getOrElse(Seq.empty),
         selectingLabel1).getOrElse("")
 
-      val selectingLabel2 = isSecondLevel match {
-        case false => toSelectingColumn(gs.selecting)
-        case _ => toAggregationColumn(gs.selecting)
-      }
+      val selectingLabel2 = toSelectingColumn(!isThirdLevel)(gs.selecting)
+
       //第二层维度字段及指标聚合函数
       val columns2 = toMakeColumn("", groupColumn,
         gs.levelColumns.getOrElse(Seq.empty),
         selectingLabel2).getOrElse("")
       //第三层维度字段及指标聚合函数
-      val columns3 = toMakeColumn("", groupColumn, toAggregationColumn(gs.selecting)).getOrElse("")
+      val columns3 = toMakeColumn("", groupColumn, toSelectingColumn(isThirdLevel)(gs.selecting)).getOrElse("")
 
       //第一层分组字段
-      val grouping1 = isSecondLevel match {
+      val grouping1 = isThirdLevel match {
         case false => toMakeColumn("GROUP BY ", groupColumn, gs.uniqueColumns.getOrElse(Seq.empty), gs.levelColumns.getOrElse(Seq.empty))
         case _ => None
       }
@@ -69,8 +78,8 @@ class SimpleSqlEngining extends SqlEngining {
 
       val level1SQL = sqlTemplate(s"${tableName}${gs.tableEx}", columns1, filterResp.filtering1, grouping1)
 
-      val level2SQL = isSecondLevel match {
-        case false =>
+      val level2SQL = isThirdLevel match {
+        case true =>
           val havingFilter = gs.havingFilters.getOrElse("").split(",") match {
             case seq if seq.size > 0 => Some(seq.mkString("HAVING ", " AND ", ""))
             case _ => None
@@ -114,12 +123,12 @@ class SimpleSqlEngining extends SqlEngining {
   }
 
   /**
-   * 指标字段
+   * 指标字段(第一层)
    */
   def toSelectingLabel: PartialFunction[Seq[Property], Seq[String]] = {
     case properties =>
       properties.map { p =>
-        val label = p.cellLabel match {
+        val label = toCellLabel(p) match {
           case s if !s.isEmpty => s" AS $s"
           case _ => ""
         }
@@ -128,36 +137,55 @@ class SimpleSqlEngining extends SqlEngining {
   }
 
   /**
-   * 指标查询字段(带有聚合函数)
+   * 指标查询字段(带有聚合函数)(第二层)
    */
-  def toSelectingColumn: PartialFunction[Seq[Property], Seq[String]] = {
+  def toSelectingColumn(isAgg: Boolean = false): PartialFunction[Seq[Property], Seq[String]] = {
     case properties =>
       properties.map { p =>
         p.support.map(_.isUsing) match {
-          case Some(true) => s"${p.cellExpression.getOrElse("")} as ${p.cellLabel}"
+          case Some(true) =>
+            val label = toCellLabel(p)
+            isAgg match {
+              case true => s"SUM(${label}) AS ${label}"
+              case _ => s"${toSelectingMethod(p)}(${label}) as ${label}"
+            }
+
           case _ => s"0"
         }
       } filter (!_.isEmpty)
   }
 
-  /**
-   * 合并计算结果(多层计算指标)
-   */
-  def toAggregationColumn: PartialFunction[Seq[Property], Seq[String]] = {
-    case properties =>
-      properties.map { p =>
-        val method = p.aggregationMethod match {
-          case Some(m) if !m.isEmpty => m
-          case _ => "SUM"
-        }
-
-        p.support.map(_.isUsing) match {
-          case Some(true) => s"${method}(${p.cellLabel}) as ${p.cellLabel}"
-          case _ => s"0"
-        }
-
+  def toCellLabel: PartialFunction[Property, String] = {
+    case p =>
+      p.support.flatMap(_.parentId) match {
+        case Some(s) => s"${p.cellLabel}_${s}"
+        case _ => p.cellLabel
       }
   }
+
+  def toSelectingMethod: PartialFunction[Property, String] = {
+    case p =>
+      p.aggregationMethod match {
+        case Some(m) if !m.isEmpty => m.toUpperCase
+        case _ => "SUM"
+      }
+  }
+
+  /**
+   * 合并计算结果(多层计算指标)(第三层)
+   */
+  //  def toAggregationColumn: PartialFunction[Seq[Property], Seq[String]] = {
+  //    case properties =>
+  //      properties.map { p =>
+  //        p.support.map(_.isUsing) match {
+  //          case Some(true) =>
+  //            val label = toCellLabel(p)
+  //            s"SUM(${label}) AS ${label}"
+  //          case _ => s"0"
+  //        }
+  //
+  //      }
+  //  }
 
   def getCellHeader(grouping: Option[Seq[Property]], selecting: Seq[Property]): Seq[CellHeader] = {
 
@@ -214,7 +242,8 @@ class SimpleSqlEngining extends SqlEngining {
    */
   def getSelectingGroup: PartialFunction[Seq[Property], Seq[GroupSelecting]] = {
     case properties =>
-      properties.groupBy { p =>
+
+      properties.filterNot(_.propertyType == PropertyType.Combining).groupBy { p =>
         s"${p.tableEx.getOrElse("")}#${p.uniqueColumns.getOrElse("")}#${p.levelColumns.getOrElse("")}#${p.havingFilters.getOrElse("")}#${p.cellFilters.getOrElse("")}"
       }.map { x =>
 
