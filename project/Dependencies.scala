@@ -66,11 +66,12 @@ object Dependencies {
   )
 
   val finchVersion = "0.14.1"
+  val oauth2Version = "0.14.0"
   
   val finchDependency = Seq(
     "com.github.finagle" %% "finch-core" % finchVersion,
-    "com.github.finagle" %% "finch-json4s" % finchVersion,
-    "com.github.finagle" %% "finch-oauth2" % finchVersion
+    "com.github.finagle" %% "finch-json4s" % oauth2Version,
+    "com.github.finagle" %% "finch-oauth2" % oauth2Version
   )
 
   val thriftVersion = "0.9.0"

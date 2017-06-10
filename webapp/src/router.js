@@ -1,13 +1,19 @@
 import React from 'react';
 import { Router, Route } from 'dva/router';
-import IndexPage from './routes/IndexPage';
+import App from './routes/App';
 
-function RouterConfig({ history }) {
-  return (
-    <Router history={history}>
-      <Route path="/" component={IndexPage} />
-    </Router>
-  );
+
+const Routers = () => {
+
+	const routes = [{
+		path: '/',
+		component: App
+	}]
+
+	return (
+		<Router routes={routes} />
+	)
+
 }
 
-export default RouterConfig;
+export default Routers;

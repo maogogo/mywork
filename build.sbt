@@ -23,6 +23,7 @@ lazy val common = Project("my-common", file("common"))
 lazy val rest = Project("my-rest", file("rest"))
 	.dependsOn(common)
   .settings(basicSettings: _*)
+  .settings(libraryDependencies ++= finchDependency)
   .enablePlugins(JavaServerAppPackaging)
 
 lazy val leaf = Project("my-leaf", file("leaf"))
