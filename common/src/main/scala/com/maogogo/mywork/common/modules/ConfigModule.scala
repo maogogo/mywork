@@ -9,16 +9,19 @@ import java.io.File
 
 trait ConfigModule { self =>
 
+  val RpcServerPrefix = "rpc.server."
+  val RpcClientPrefix = "rpc.client."
+
   def zookServer(implicit config: Config) = (s: String) => {
-    val label = s"rpc.server.${s}"
+    val label = s"${RpcServerPrefix}${s}"
     s"zk!${config.getString(label)}"
   }
 
   def zookClient[T: Manifest](s: String)(implicit config: Config) = {
-    provideClient(config.getString(s"rpc.client.${s}"))
+    provideClient(config.getString(s"${RpcClientPrefix}${s}"))
   }
 
-  private[this] def provideClient[T: Manifest](path: String) = ThriftMux.client.newIface[T](s"zk2!${path}")
+  def provideClient[T: Manifest](path: String) = ThriftMux.client.newIface[T](s"zk2!${path}")
 
   def provideServices(injector: com.twitter.inject.Injector): Map[String, ThriftService] = ???
 

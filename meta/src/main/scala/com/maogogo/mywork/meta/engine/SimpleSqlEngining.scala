@@ -27,13 +27,11 @@ class SimpleSqlEngining extends SqlEngining {
   def toSimpleSql(tableName: String, grouping: Option[Seq[Property]], selecting: Seq[Property], filtering: Option[Seq[Property]]): Seq[QuerySql] = {
 
     //指标分组
-    //TODO 这里应该加入相关联的指标
     val selectingGroup = getSelectingGroup(selecting)
     //表头
     val headers = getCellHeader(grouping, selecting)
 
     selectingGroup.map { gs =>
-      println("gs ====>>>" + gs.selecting.size)
       //GroupBy 字段
       val groupColumn = toGroupingColumn(grouping).getOrElse(Seq.empty)
       //两层SQL语句
@@ -41,7 +39,6 @@ class SimpleSqlEngining extends SqlEngining {
         case Some(h) if h.size > 0 => true
         case _ => true
       }
-      println("isSecondLevel ===>>." + isThirdLevel)
       //指标字段标签
       val selectingLabel1 = isThirdLevel match {
         case false => toSelectingLabel(gs.selecting) //max
@@ -138,11 +135,12 @@ class SimpleSqlEngining extends SqlEngining {
 
   /**
    * 指标查询字段(带有聚合函数)(第二层)
+   * isAgg = true 第二层 或是 第三层
    */
   def toSelectingColumn(isAgg: Boolean = false): PartialFunction[Seq[Property], Seq[String]] = {
     case properties =>
       properties.map { p =>
-        p.support.map(_.isUsing) match {
+        p.support.map(_.inUsing) match {
           case Some(true) =>
             val label = toCellLabel(p)
             isAgg match {
@@ -171,22 +169,6 @@ class SimpleSqlEngining extends SqlEngining {
       }
   }
 
-  /**
-   * 合并计算结果(多层计算指标)(第三层)
-   */
-  //  def toAggregationColumn: PartialFunction[Seq[Property], Seq[String]] = {
-  //    case properties =>
-  //      properties.map { p =>
-  //        p.support.map(_.isUsing) match {
-  //          case Some(true) =>
-  //            val label = toCellLabel(p)
-  //            s"SUM(${label}) AS ${label}"
-  //          case _ => s"0"
-  //        }
-  //
-  //      }
-  //  }
-
   def getCellHeader(grouping: Option[Seq[Property]], selecting: Seq[Property]): Seq[CellHeader] = {
 
     val groupHeaders = grouping.map(toCellHeader).getOrElse(Seq.empty)
@@ -201,17 +183,13 @@ class SimpleSqlEngining extends SqlEngining {
   def getFilteringResp(grouping: Option[Seq[Property]], selecting: Seq[Property], filtering: Option[Seq[Property]]): FilteringResp = {
 
     // 维度条件
-    val groupFiltering = grouping.map {
-      _.map(toCellFilter)
-    }
+    val groupFiltering = grouping.map(_.map(toCellFilter))
 
     //指标条件
     val selectFiltering = selecting.map(toCellFilter)
 
     //过滤条件
-    val filterFiltering = filtering.map {
-      _.map(toCellFilter)
-    }
+    val filterFiltering = filtering.map(_.map(toCellFilter))
 
     //第一层过滤条件不能包括"C_"开头的
     val select1 = selectFiltering.filterNot { _._1.startsWith(QueryPrefix) }
@@ -246,12 +224,12 @@ class SimpleSqlEngining extends SqlEngining {
       properties.filterNot(_.propertyType == PropertyType.Combining).groupBy { p =>
         s"${p.tableEx.getOrElse("")}#${p.uniqueColumns.getOrElse("")}#${p.levelColumns.getOrElse("")}#${p.havingFilters.getOrElse("")}#${p.cellFilters.getOrElse("")}"
       }.map { x =>
-
+        //重新标记维度和指标
         val selecing = properties.map { p =>
-          val isUsing = x._2.find(s => s.id == p.id).isDefined
+          val inUsing = x._2.find(s => s.id == p.id).isDefined
           val support = p.support match {
-            case Some(s) => s.copy(isUsing = isUsing)
-            case _ => PropertySupport(isUsing = isUsing)
+            case Some(s) => s.copy(inUsing = inUsing)
+            case _ => PropertySupport(inUsing = inUsing)
           }
 
           p.copy(support = Some(support))

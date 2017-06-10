@@ -8,6 +8,7 @@ import javax.inject.{ Inject, Named }
 import com.typesafe.config.Config
 import scala.collection.JavaConversions._
 import com.maogogo.mywork.root.service.RootServiceImpl
+import scala.collection.JavaConverters._
 
 trait ServicesModule extends TwitterModule with ConfigModule with RedisClusterModule {
 
@@ -18,15 +19,14 @@ trait ServicesModule extends TwitterModule with ConfigModule with RedisClusterMo
   }
 
   override def provideServices(injector: com.twitter.inject.Injector) = Map(
-    s"root" -> injector.instance[RootService.FutureIface]
-  )
+    s"root" -> injector.instance[RootService.FutureIface])
 
-  //  @Provides @Singleton @Named("MergerServers")
-  //  def provideServers(@Inject() config: Config): Seq[MergerService.FutureIface] = {
-  //    config.getObject("rpc.client.mergers").map { t =>
-  //      provideClient[MergerService.FutureIface](t._2.unwrapped().toString)
-  //    }.toSeq
-  //  }
+  @Provides @Singleton @Named("MergerServers")
+  def provideServers(@Inject() config: Config): Seq[MergerService.FutureIface] = {
+    config.getObject(s"${RpcClientPrefix}mergers").map { t =>
+      provideClient[MergerService.FutureIface](t._2.unwrapped().toString)
+    }.toSeq
+  }
 
 }
 

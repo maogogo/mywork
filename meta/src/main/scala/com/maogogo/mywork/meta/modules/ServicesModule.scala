@@ -30,13 +30,6 @@ trait ServicesModule extends TwitterModule with ConfigModule with DataSourceModu
     s"engine" -> injector.instance[EngineService.FutureIface]
   )
 
-  //  @Provides @Singleton @Named("MergerServers")
-  //  def provideServers(@Inject() config: Config): Seq[MergerService.FutureIface] = {
-  //    config.getObject("rpc.client.mergers").map { t =>
-  //      provideClient[MergerService.FutureIface](t._2.unwrapped().toString)
-  //    }.toSeq
-  //  }
-
 }
 
 object ServicesModule extends ServicesModule

@@ -31,12 +31,13 @@ struct Row {
 
 struct CellHeader {
   1: string label
-  2: optional string parent_label
-  3: i32 cell_index
-  4: optional i32 row_span
-  5: optional i32 col_span
-  6: optional i32 parent_row_span
-  7: optional i32 parent_col_span
+  2: PROPERTY_ID property_id
+  3: optional string parent_label
+  4: i32 cell_index
+  5: optional i32 row_span
+  6: optional i32 col_span
+  7: optional i32 parent_row_span
+  8: optional i32 parent_col_span
 }
 
 struct MasterOrSlave {
@@ -88,7 +89,7 @@ enum PropertyType {
 
 struct PropertySupport {
   1: optional list<string> values
-  2: optional bool is_using = false
+  2: optional bool in_using = false
   3: optional string parent_id
 }
 

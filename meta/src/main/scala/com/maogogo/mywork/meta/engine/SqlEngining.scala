@@ -53,7 +53,7 @@ trait SqlEngining {
   def toCellHeader: PartialFunction[Seq[Property], Seq[CellHeader]] = {
     case properties if properties.size > 0 =>
       properties.map { p =>
-        CellHeader(label = p.label, parentLabel = None, cellIndex = p.cellIndex, rowSpan = None, colSpan = None, parentRowSpan = None, parentColSpan = None)
+        CellHeader(label = p.label, propertyId = p.id, parentLabel = None, cellIndex = p.cellIndex, rowSpan = None, colSpan = None, parentRowSpan = None, parentColSpan = None)
       }
     case _ => Seq.empty
   }
