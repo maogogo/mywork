@@ -24,7 +24,7 @@ object Main extends TwitterServer {
 
     val services = ServicesModule.services(injector)
     Await.all(services: _*)
-    info(s"${logo}\t${adminPort}\t${config.origin()}")
+    info(s"${logo}\t${adminPort}\t${config.origin}")
     Await.ready(adminHttpServer)
   }
 
