@@ -1,51 +1,67 @@
 import sbt._
-import Keys._
+import sbt.Keys._
 import Process._
-
-import BuildSettings._
+import Settings._
+import Publish.{ settings => publishSettings }
 import Dependencies._
 
-lazy val thrift = Project("my-thrift", file("thrift"))
-	.settings(basicSettings: _*)
+//for interface
+lazy val thrift = module("thrift", false)
   .settings(thriftSettings: _*)
-  .settings(libraryDependencies ++= thriftDependency)
+  .settings(publishSettings: _*)
+  .settings(libraryDependencies ++= mcompile(thriftDependency: _*))
 
-lazy val common = Project("my-common", file("common"))
-	.dependsOn(thrift)
-	.settings(basicSettings: _*)
-  .settings(libraryDependencies ++= commonDependency)
-  .settings(libraryDependencies ++= mysqlDependency)
-  .settings(libraryDependencies ++= serverDependency)
-  .settings(libraryDependencies ++= redisDependency)
-  .settings(libraryDependencies ++= mongoDependency)
-  //.settings(libraryDependencies ++= kafkaDependency)
+// for java client
+lazy val client = module("client", false)
+  .dependsOn(thrift % "test->test;compile->compile")
+  .settings(publishSettings: _*)
+  .settings(
+    libraryDependencies ++= mcompile(commonDependency ++ serverDependency: _*)
+  )
 
-lazy val rest = Project("my-rest", file("rest"))
-	.dependsOn(common)
-  .settings(basicSettings: _*)
-  .settings(libraryDependencies ++= finchDependency)
-  .enablePlugins(JavaServerAppPackaging)
+//commons
+lazy val common = module("common", false)
+  .dependsOn(thrift % "test->test;compile->compile")
+  .settings(
+    libraryDependencies ++=
+      mcompile(commonDependency ++ injectDependency ++ serverDependency ++ 
+        mysqlDependency ++ redisDependency ++ mongoDependency ++ jdbcDependency: _*)
+  )
 
-lazy val leaf = Project("my-leaf", file("leaf"))
-	.dependsOn(common)
-  .settings(basicSettings: _*)
-  .enablePlugins(JavaServerAppPackaging)
+lazy val rest = module("rest")
+  .dependsOn(common % "test->test;compile->compile")
+  .settings(
+    libraryDependencies ++=
+      mcompile(finchDependency: _*) ++
+      mtest(testDependency: _*)
+  )
 
-lazy val merger = Project("my-merger", file("merger"))
-	.dependsOn(common)
-  .settings(basicSettings: _*)
-  .enablePlugins(JavaServerAppPackaging)
+lazy val merger = module("merger")
+  .dependsOn(common % "test->test;compile->compile")
+  .settings(libraryDependencies ++= mtest(testDependency: _*))
 
-lazy val meta = Project("my-meta", file("meta"))
-	.dependsOn(common)
-  .settings(basicSettings: _*)
-  .enablePlugins(JavaServerAppPackaging)
+lazy val leaf = module("leaf")
+  .dependsOn(common % "test->test;compile->compile")
+  .settings(libraryDependencies ++= mtest(testDependency: _*) 
+  )
 
-lazy val root = Project("my-root", file("root"))
-	.dependsOn(common)
-  .settings(basicSettings: _*)
-  .enablePlugins(JavaServerAppPackaging)
+lazy val meta = module("meta")
+  .dependsOn(common % "test->test;compile->compile")
+  .settings(libraryDependencies ++= mtest(testDependency: _*))
 
-lazy val all = Project("mywork", file(".")) //(project in file("."))
-  .aggregate(thrift, rest, common, root, meta, merger, leaf)
+lazy val root = module("root")
+  .dependsOn(common % "test->test;compile->compile")
+  .settings(libraryDependencies ++= mtest(testDependency: _*))
+
+
+lazy val backend = module("backend")
+  .dependsOn(common % "test->test;compile->compile")
+  .settings(
+    libraryDependencies ++=
+      mcompile(finchDependency: _*) ++
+      mtest(testDependency: _*)
+  )
+
+lazy val all = Project(id = Globals.name, base = file(".")) //(project in file("."))
+  .aggregate(thrift, backend, client, common, rest, root, meta, merger, leaf)
   //.settings(defaultScalariformSettings: _*)

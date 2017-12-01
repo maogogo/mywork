@@ -5,7 +5,7 @@ import com.twitter.util.Future
 import javax.inject.Inject
 import com.maogogo.mywork.meta.dao.MetaServiceCacheData
 
-class EngineServiceImpl @Inject() (data: MetaServiceCacheData) extends EngineService.FutureIface {
+class EngineServiceImpl @Inject() (data: MetaServiceCacheData) extends EngineService.MethodPerEndpoint {
 
   def engining(req: RootQueryReq): Future[Seq[QuerySql]] = {
 

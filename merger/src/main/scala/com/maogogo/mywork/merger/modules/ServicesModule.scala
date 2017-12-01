@@ -1,7 +1,7 @@
 package com.maogogo.mywork.merger.modules
 
 import com.twitter.inject.TwitterModule
-import com.maogogo.mywork.common.modules.ConfigModule
+import com.maogogo.mywork.common.modules._
 import org.slf4j.LoggerFactory
 import com.maogogo.mywork.thrift._
 import com.google.inject.{ Provides, Singleton }
@@ -12,25 +12,22 @@ import com.twitter.finagle.ThriftMux
 import com.maogogo.mywork.merger.service.MergerServiceImpl
 import com.maogogo.mywork.common.dispatch.LeafingDispatchImpl
 
-trait ServicesModule extends TwitterModule with ConfigModule {
-
-  lazy val log = LoggerFactory.getLogger(this.getClass)
-
-  def zookClient(s: String) = s"zk2!${s}"
+trait ServicesModule extends TwitterModule with BaseConfigModule {
 
   override def configure: Unit = {
-    bindSingleton[LeafService.FutureIface].to[LeafingDispatchImpl]
-    bindSingleton[MergerService.FutureIface].to[MergerServiceImpl]
+    bindSingleton[LeafService.MethodPerEndpoint].to[LeafingDispatchImpl]
+    bindSingleton[MergerService.MethodPerEndpoint].to[MergerServiceImpl]
   }
 
   override def provideServices(injector: com.twitter.inject.Injector) = Map(
-    s"merger" -> injector.instance[MergerService.FutureIface])
+    s"merger" -> injector.instance[MergerService.MethodPerEndpoint])
 
   @Provides @Singleton @Named("LeafServers")
-  def provideServers(@Inject() config: Config): Seq[LeafService.FutureIface] = {
-    config.getObject(s"${RpcClientPrefix}leafs").map { t =>
-      log.info(s"get LeafService @ ${t._2.render}")
-      ThriftMux.client.newIface[LeafService.FutureIface](zookClient(t._2.unwrapped().toString()))
+  def provideServers(@Inject() config: Config): Seq[LeafService.MethodPerEndpoint] = {
+    config.getObject(s"${RPC.clientPrefix}leafs").map {
+      case (k, v) =>
+        Log.info(s"get LeafService @ ${k}")
+        provideClient[LeafService.MethodPerEndpoint](v.render())
     }.toSeq
   }
 

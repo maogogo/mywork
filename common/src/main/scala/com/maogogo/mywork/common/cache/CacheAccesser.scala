@@ -12,11 +12,10 @@ trait CacheAccesser[KS, VS] {
 }
 
 class SimpleStringBytesCacher[T](val realm: String, val ttl: Int)(
-    implicit
-    val ks: KeySerializer[String, Bytes],
-    implicit val vs: ValueSerializer[T, Bytes],
-    implicit val accesser: CacheAccesser[Bytes, Bytes]
-) extends Cacher[String, Bytes, T, Bytes] {
+  implicit
+  val ks: KeySerializer[String, Bytes],
+  implicit val vs: ValueSerializer[T, Bytes],
+  implicit val accesser: CacheAccesser[Bytes, Bytes]) extends Cacher[String, Bytes, T, Bytes] {
 }
 
 final class Murmurhash128StringBytesKeySerializer extends KeySerializer[String, Bytes] {

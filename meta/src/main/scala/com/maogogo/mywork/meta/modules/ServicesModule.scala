@@ -13,22 +13,19 @@ import com.maogogo.mywork.meta.dao.MetaServiceDao
 import com.maogogo.mywork.common.cache._
 import com.maogogo.mywork.meta.dao.MetaServiceCacheData
 
-trait ServicesModule extends TwitterModule with ConfigModule with DataSourceModule with RedisClusterModule {
+trait ServicesModule extends TwitterModule with BaseConfigModule with DataSourceModule {
 
   override def configure: Unit = {
-    bindSingleton[RedisBinaryCacheAccesser]
-
     bindSingleton[MetaServiceDao]
     bindSingleton[MetaServiceCacheData]
 
-    bindSingleton[EngineService.FutureIface].to[EngineServiceImpl]
-    bindSingleton[MetaService.FutureIface].to[MetaServiceImpl]
+    bindSingleton[EngineService.MethodPerEndpoint].to[EngineServiceImpl]
+    bindSingleton[MetaService.MethodPerEndpoint].to[MetaServiceImpl]
   }
 
   override def provideServices(injector: com.twitter.inject.Injector) = Map(
-    s"meta" -> injector.instance[MetaService.FutureIface],
-    s"engine" -> injector.instance[EngineService.FutureIface]
-  )
+    s"meta" -> injector.instance[MetaService.MethodPerEndpoint],
+    s"engine" -> injector.instance[EngineService.MethodPerEndpoint])
 
 }
 

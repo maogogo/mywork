@@ -23,11 +23,11 @@ object ThreeDesUtil {
 
   def decrypt(src: String): String = {
     val bytesrc = new BASE64Decoder().decodeBuffer(src)
-    //--解密的key  
+    //--解密的key
     val dks = new DESedeKeySpec(key.getBytes("UTF-8"))
     val securekey = SecretKeyFactory.getInstance(algorithm).generateSecret(dks)
 
-    //--Chipher对象解密  
+    //--Chipher对象解密
     val cipher = Cipher.getInstance(ciphe)
     cipher.init(Cipher.DECRYPT_MODE, securekey)
     new String(cipher.doFinal(bytesrc))

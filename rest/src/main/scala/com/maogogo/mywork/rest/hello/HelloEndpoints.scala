@@ -4,7 +4,7 @@ import io.finch._
 import javax.inject.Inject
 import com.maogogo.mywork.thrift._
 
-class HelloEndpoints @Inject() (service: RootService.FutureIface) {
+class HelloEndpoints @Inject() (service: RootService.MethodPerEndpoint) {
 
   def endpoints = hello
 

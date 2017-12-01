@@ -10,21 +10,23 @@ import scala.collection.JavaConversions._
 import com.maogogo.mywork.root.service.RootServiceImpl
 import scala.collection.JavaConverters._
 
-trait ServicesModule extends TwitterModule with ConfigModule with RedisClusterModule {
+trait ServicesModule extends TwitterModule with BaseConfigModule {
 
   override def configure: Unit = {
-    bindSingleton[EngineService.FutureIface].toInstance(zookClient[EngineService.FutureIface]("engine"))
-    bindSingleton[MetaService.FutureIface].toInstance(zookClient[MetaService.FutureIface]("meta"))
-    bindSingleton[RootService.FutureIface].to[RootServiceImpl]
+    bindSingleton[EngineService.MethodPerEndpoint].toInstance(zookClient[EngineService.MethodPerEndpoint]("engine"))
+    bindSingleton[MetaService.MethodPerEndpoint].toInstance(zookClient[MetaService.MethodPerEndpoint]("meta"))
+    bindSingleton[RootService.MethodPerEndpoint].to[RootServiceImpl]
   }
 
   override def provideServices(injector: com.twitter.inject.Injector) = Map(
-    s"root" -> injector.instance[RootService.FutureIface])
+    s"root" -> injector.instance[RootService.MethodPerEndpoint])
 
   @Provides @Singleton @Named("MergerServers")
-  def provideServers(@Inject() config: Config): Seq[MergerService.FutureIface] = {
-    config.getObject(s"${RpcClientPrefix}mergers").map { t =>
-      provideClient[MergerService.FutureIface](t._2.unwrapped().toString)
+  def provideServers(@Inject() config: Config): Seq[MergerService.MethodPerEndpoint] = {
+    config.getObject(s"${RPC.clientPrefix}mergers").map {
+      case (k, v) =>
+        Log.info(s"get MergerService @ ${k}")
+        provideClient[MergerService.MethodPerEndpoint](v.render())
     }.toSeq
   }
 

@@ -1,16 +1,16 @@
 package com.maogogo.mywork.rest.modules
 
 import com.twitter.inject.TwitterModule
-import com.maogogo.mywork.common.modules.ConfigModule
+import com.maogogo.mywork.common.modules._
 import com.maogogo.mywork.thrift.RootService
 import com.google.inject.{ Provides, Singleton }
 import com.twitter.finagle.http.filter.Cors
 import com.maogogo.mywork.rest.hello.HelloEndpoints
 
-trait ServicesModule extends TwitterModule with ConfigModule {
+trait ServicesModule extends TwitterModule with BaseConfigModule {
 
   override def configure: Unit = {
-    bindSingleton[RootService.FutureIface].toInstance(zookClient[RootService.FutureIface]("root"))
+    bindSingleton[RootService.MethodPerEndpoint].toInstance(zookClient[RootService.MethodPerEndpoint]("root"))
   }
 
   def endpoints(injector: com.twitter.inject.Injector) = {

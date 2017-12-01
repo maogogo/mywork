@@ -6,35 +6,47 @@ import com.twitter.scrooge.ThriftService
 import com.google.inject.{ Provides, Singleton }
 import com.typesafe.config.ConfigFactory
 import java.io.File
+import org.slf4j.LoggerFactory
 
-trait ConfigModule { self =>
+trait BaseConfigModule { self =>
 
-  val RpcServerPrefix = "rpc.server."
-  val RpcClientPrefix = "rpc.client."
-
-  def zookServer(implicit config: Config) = (s: String) => {
-    val label = s"${RpcServerPrefix}${s}"
-    s"zk!${config.getString(label)}"
-  }
+  lazy val Log = LoggerFactory.getLogger(getClass)
 
   def zookClient[T: Manifest](s: String)(implicit config: Config) = {
-    provideClient(config.getString(s"${RpcClientPrefix}${s}"))
+    provideClient(config.getString(s"${RPC.clientPrefix}${s}"))
   }
 
+  /**
+   * 创建 client
+   */
   def provideClient[T: Manifest](path: String) = ThriftMux.client.newIface[T](s"zk2!${path}")
 
+  /**
+   * 创建server
+   */
   def provideServices(injector: com.twitter.inject.Injector): Map[String, ThriftService] = ???
 
-  def services(injector: com.twitter.inject.Injector)(implicit config: Config) = {
+  /**
+   *
+   */
+  def services(injector: com.twitter.inject.Injector) = {
     val rand = new scala.util.Random
+    val config = injector.instance[Config]
 
-    provideServices(injector).map { kv =>
-      val (name, service) = kv
-      val anounce = s"${zookServer(config)(name)}!" + Math.abs(rand.nextInt)
-      ThriftMux.server.serveIface(s":*", service).announce(anounce)
+    provideServices(injector).map {
+      case (name, service) =>
+
+        val label = s"${RPC.serverPrefix}${name}"
+        val zkPath = s"zk!${config.getString(label)}"
+
+        val anounce = s"${zkPath}!" + Math.abs(rand.nextInt)
+        ThriftMux.server.serveIface(s":*", service).announce(anounce)
     }.toSeq
   }
 
+  /**
+   *
+   */
   @Provides @Singleton
   implicit def provideConfig: Config = {
 
@@ -45,8 +57,13 @@ trait ConfigModule { self =>
     }
 
     val path = ConfigFactory.load.getString(env)
-    println(s"loading path: ${path} by env: ${env}")
+    Log.info(s"loading path: ${path} by env: ${env}")
     ConfigFactory parseFile (new File(path)) resolve
   }
 
+}
+
+object RPC {
+  val serverPrefix = "rpc.server."
+  val clientPrefix = "rpc.client."
 }

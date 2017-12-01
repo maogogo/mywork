@@ -65,8 +65,7 @@ class MetaServiceDao @Inject() (@Named("connections") val connections: Seq[DataS
       levelColumns = row("level_columns").asOptionString,
       isFixedShow = row("is_fixed_show").asOptionBool.getOrElse(false),
       formulaScript = row("formula_script").asOptionString,
-      relateIds = row("relate_ids").asOptionString
-    ))
+      relateIds = row("relate_ids").asOptionString))
 
   }
 
@@ -75,7 +74,6 @@ class MetaServiceDao @Inject() (@Named("connections") val connections: Seq[DataS
       id = row("id").asString,
       dbTableName = row("db_table_name").asString,
       isListing = row("is_listing").asOptionBool,
-      dbSchema = row("db_schema").asOptionString, forceIndex = None
-    ))
+      dbSchema = row("db_schema").asOptionString, forceIndex = None))
 
 }

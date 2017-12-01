@@ -48,8 +48,7 @@ trait DataSourceModule { self =>
         high = Int.MaxValue,
         idleTime = Duration.Top,
         bufferSize = 0,
-        maxWaiters = Int.MaxValue
-      ))
+        maxWaiters = Int.MaxValue))
 
     client.withDatabase(database).newRichClient(host)
   }
@@ -59,5 +58,4 @@ trait DataSourceModule { self =>
 case class DataSourcePool(
   partitions: Int,
   testing: Boolean = false,
-  clients: Seq[TransactionsClient]
-)
+  clients: Seq[TransactionsClient])

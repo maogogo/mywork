@@ -10,7 +10,7 @@ import com.maogogo.mywork.meta.modules.ServicesModule
 
 object Main extends TwitterServer {
 
-  implicit val config: Config = ServicesModule.provideConfig
+  lazy val config: Config = ServicesModule.provideConfig
   override val adminPort = flag("admin.port", new InetSocketAddress(config.getInt("admin.port")), "")
 
   val level: Level = Level.ERROR

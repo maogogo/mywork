@@ -2,123 +2,136 @@ import sbt._
 
 object Dependencies {
 
-  val repositories = Seq(
-    Resolver.sonatypeRepo("snapshots"),
-    Resolver.sonatypeRepo("releases"),
-    //Resolver.bintrayRepo("cakesolutions", "maven"),
-    //"OSS Sonatype" at "https://repo1.maven.org/maven2/",
-    "Spring IO" at "https://repo.spring.io/release",
-    "Artima Maven Repository" at "http://repo.artima.com/releases",
-    "twttr" at "https://maven.twttr.com/",
-    //"amateras-repo" at "http://amateras.sourceforge.jp/mvn/",
-    //"spray repo" at "http://repo.spray.io",
-    "finch-server" at "http://storage.googleapis.com/benwhitehead_me/maven/public",
-    "sonatype-oss-snapshot" at "https://oss.sonatype.org/content/repositories/snapshots"
-  )
+  object Versions {
 
-	val slf4jVersion = "1.7.25"
-  val logbackVersion = "1.2.2"
-  val configVersion = "1.3.1"
-  val guavaVersion = "21.0"
-  val lang3Version = "3.5"
-  val json4sJackson = "3.5.2"
+    val scalatest = "3.0.4"
+    val junit = "4.12"
+
+    val slf4j = "1.7.25"
+    val logback = "1.2.3"
+    val config = "1.3.2"
+    val guava = "23.0"
+    val lang3 = "3.7"
+    val json4s = "3.5.3"
+    val scalaIO = "0.4.3-1"
+
+    val twitter = "17.11.0"
+    val finagle = "17.11.0"
+    val guice = "4.1.0"
+    val jsr = "3.0.2"
+    val inject = "17.11.0"
+
+    val finch = "0.15.1"
+
+    val thrift = "0.9.3"
+    val scrooge = "17.11.0"
+
+    val solr = "0.0.16"
+    val redis = "2.9.0"
+    val mongo = "3.1.1"
+    val csv = "1.3.5"
+    val jsch = "0.1.54"
+    val kafka = "0.10.1.2"
+
+    val bonecp = "0.8.0.RELEASE"
+
+  }
+
+  val testDependency = Seq(
+    "org.scalactic" %% "scalactic" % Versions.scalatest,
+    "org.scalatest" %% "scalatest" % Versions.scalatest,
+    "junit" % "junit" % Versions.junit)
 
   val commonDependency = Seq(
+    "org.slf4j" % "slf4j-api" % Versions.slf4j,
+    "org.slf4j" % "log4j-over-slf4j" % Versions.slf4j,
+    "org.slf4j" % "jcl-over-slf4j" % Versions.slf4j,
+    "org.slf4j" % "jul-to-slf4j" % Versions.slf4j,
+    "ch.qos.logback" % "logback-core" % Versions.logback,
+    "ch.qos.logback" % "logback-classic" % Versions.logback,
+    "ch.qos.logback" % "logback-access" % Versions.logback,
+    "com.typesafe" % "config" % Versions.config,
+    "org.apache.commons" % "commons-lang3" % Versions.lang3,
+    "com.google.guava" % "guava" % Versions.guava,
+    "org.json4s" %% "json4s-native" % Versions.json4s,
+    "org.json4s" %% "json4s-jackson" % Versions.json4s,
+    "com.github.scala-incubator.io" %% "scala-io-core" % Versions.scalaIO,
+    "com.github.scala-incubator.io" %% "scala-io-file" % Versions.scalaIO)
 
-    "org.scalactic" %% "scalactic" % "3.0.1" % "test",
-    "org.scalatest" %% "scalatest" % "3.0.1" % "test",
-    "junit" % "junit" % "4.12" % "test",
-    //"org.scala-lang" % "scala-compiler" % "2.11.8",
-    "org.slf4j" % "slf4j-api" % slf4jVersion,
-    "org.slf4j" % "log4j-over-slf4j" % slf4jVersion,
-    "org.slf4j" % "jcl-over-slf4j" % slf4jVersion,
-    "org.slf4j" % "jul-to-slf4j" % slf4jVersion,
-    "ch.qos.logback" % "logback-core" % logbackVersion,
-    "ch.qos.logback" % "logback-classic" % logbackVersion,
-    "ch.qos.logback" % "logback-access" % logbackVersion,
-    "com.typesafe" % "config" % configVersion,
-    "org.apache.commons" % "commons-lang3" % lang3Version,
-    "com.google.guava" % "guava" % guavaVersion,
-    "org.json4s" %% "json4s-native" % json4sJackson,
-    "org.json4s" %% "json4s-jackson" % json4sJackson
-  )
-
-  val serverVersion = "1.29.0"
-  val finagleVersion = "6.44.0"
-  val guiceVersion = "4.1.0"
-  val jsrVersion = "3.0.2"
-  val injectVersion = "2.1.6"
+  val injectDependency = Seq(
+    "com.twitter" %% "twitter-server" % Versions.twitter,
+    "com.twitter" %% "finagle-core" % Versions.finagle,
+    "com.google.inject" % "guice" % Versions.guice,
+    "com.google.code.findbugs" % "jsr305" % Versions.jsr,
+    "com.twitter" %% "inject-core" % Versions.inject,
+    "com.twitter" %% "inject-server" % Versions.inject) map {
+      _ excludeAll (
+        ExclusionRule(organization = "org.slf4j", name = "slf4j-api"),
+        ExclusionRule(organization = "org.slf4j", name = "slf4j-jdk14"),
+        ExclusionRule(organization = "org.slf4j", name = "slf4j-log4j12"))
+    }
 
   val serverDependency = Seq(
-    "com.twitter" %% "twitter-server" % serverVersion,
-    "com.twitter" %% "finagle-core" % finagleVersion,
-    "com.twitter" %% "finagle-http" % finagleVersion,
-    //"org.scalaj" %% "scalaj-http" % "2.3.0",
-    "com.twitter" %% "finagle-stats" % finagleVersion,
-    "com.twitter" %% "finagle-thriftmux" % finagleVersion,
-    "com.twitter" %% "finagle-serversets" % finagleVersion excludeAll (
-      ExclusionRule(organization = "org.slf4j", name = "slf4j-jdk14"),
-      ExclusionRule(organization = "org.slf4j", name = "slf4j-log4j12")),
-    "com.google.inject" % "guice" % guiceVersion,
-    "com.google.code.findbugs" % "jsr305" % jsrVersion,
-    "com.twitter.inject" %% "inject-core" % injectVersion,
-    "com.twitter.inject" %% "inject-server" % injectVersion
-  )
+    "com.twitter" %% "util-zk" % Versions.finagle,
+    "com.twitter" %% "finagle-stats" % Versions.finagle,
+    "com.twitter" %% "finagle-thriftmux" % Versions.finagle,
+    "com.twitter" %% "finagle-serversets" % Versions.finagle) map {
+      _ excludeAll (
+        ExclusionRule(organization = "org.slf4j", name = "slf4j-api"),
+        ExclusionRule(organization = "org.slf4j", name = "slf4j-jdk14"),
+        ExclusionRule(organization = "org.slf4j", name = "slf4j-log4j12"))
+    }
 
-  val finchVersion = "0.14.1"
-  val oauth2Version = "0.14.0"
-  
   val finchDependency = Seq(
-    "com.github.finagle" %% "finch-core" % finchVersion,
-    "com.github.finagle" %% "finch-json4s" % oauth2Version,
-    "com.github.finagle" %% "finch-oauth2" % oauth2Version
-  )
-
-  val thriftVersion = "0.9.0"
-  val scroogeVersion = "4.16.0"
+    "com.twitter" %% "finagle-http" % Versions.finagle,
+    "com.github.finagle" %% "finch-core" % Versions.finch,
+    "com.github.finagle" %% "finch-json4s" % Versions.finch,
+    "com.github.finagle" %% "finch-oauth2" % Versions.finch)
 
   val thriftDependency = Seq(
-    "org.apache.thrift" % "libthrift" % thriftVersion,
-    "com.twitter" %% "scrooge-core" % scroogeVersion,
-    "com.twitter" %% "scrooge-runtime" % "4.5.0",
-    "com.twitter" %% "scrooge-serializer" % scroogeVersion,
-    "com.twitter" %% "finagle-thrift" % finagleVersion
-  )
-
-  val mysqlVersion = "6.0.5"
-  val solrVersion = "0.0.15"
-  val redisVersion = "3.4"
-  val mongoVersion = "3.1.1"
-  val csvVersion = "1.3.4"
-  val jschVersion = "0.1.54"
+    "org.apache.thrift" % "libthrift" % Versions.thrift,
+    "com.twitter" %% "scrooge-generator" % Versions.scrooge,
+    "com.twitter" %% "scrooge-core" % Versions.scrooge,
+    //"com.twitter" %% "scrooge-runtime" % "4.5.0",
+    "com.twitter" %% "scrooge-serializer" % Versions.scrooge,
+    "com.twitter" %% "finagle-thrift" % Versions.finagle) map {
+      _ excludeAll (
+        ExclusionRule(organization = "org.slf4j", name = "slf4j-api"),
+        ExclusionRule(organization = "org.slf4j", name = "slf4j-jdk14"),
+        ExclusionRule(organization = "org.slf4j", name = "slf4j-log4j12"))
+    }
 
   val mysqlDependency = Seq(
-    "com.twitter" %% "finagle-mysql" % finagleVersion
-  )
+    "com.twitter" %% "finagle-mysql" % Versions.finagle)
+
+  val jdbcDependency = Seq(
+    "com.facebook.presto" % "presto-jdbc" % "0.188",
+    "com.jolbox" % "bonecp" % Versions.bonecp)
 
   val solrDependency = Seq(
-    "com.github.takezoe" %% "solr-scala-client" % solrVersion
-  )
+    "com.github.takezoe" %% "solr-scala-client" % Versions.solr)
 
   val redisDependency = Seq(
-    "net.debasishg" %% "redisclient" % redisVersion
-  )
+    "com.twitter" %% "finagle-redis" % Versions.finagle,
+    "redis.clients" % "jedis" % Versions.redis)
 
   val kafkaDependency = Seq(
-    "net.cakesolutions" %% "scala-kafka-client" % "0.10.1.2",
-    "net.cakesolutions" %% "scala-kafka-client-akka" % "0.10.1.2"
-  )
+    "net.cakesolutions" %% "scala-kafka-client" % Versions.kafka,
+    "net.cakesolutions" %% "scala-kafka-client-akka" % Versions.kafka)
 
   val mongoDependency = Seq(
-    "org.mongodb" %% "casbah" % mongoVersion
-  )
+    "org.mongodb" %% "casbah" % Versions.mongo)
 
   val csvDependency = Seq(
-    "com.github.tototoshi" %% "scala-csv" % csvVersion
-  )
+    "com.github.tototoshi" %% "scala-csv" % Versions.csv)
 
   val jschDependency = Seq(
-    "com.jcraft" % "jsch" % jschVersion
-  )
-  
+    "com.jcraft" % "jsch" % Versions.jsch)
+
+  def mcompile(modules: ModuleID*): Seq[ModuleID] = modules map (_ % "compile")
+  def mprovided(modules: ModuleID*): Seq[ModuleID] = modules map (_ % "provided")
+  def mtest(modules: ModuleID*): Seq[ModuleID] = modules map (_ % "test")
+  def mruntime(modules: ModuleID*): Seq[ModuleID] = modules map (_ % "runtime")
+  def mcontainer(modules: ModuleID*): Seq[ModuleID] = modules map (_ % "container")
+
 }
