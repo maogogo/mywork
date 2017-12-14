@@ -1,16 +1,17 @@
-package com.maogogo.mywork.common.dao
+package com.maogogo.mywork.common.jdbc
 
-import com.maogogo.mywork.common._
 import com.twitter.finagle.mysql._
 import java.util.TimeZone
 import java.util.Date
-import java.sql.Timestamp
-import com.twitter.finagle.mysql.transport.MysqlBuf
-import java.util.Calendar
+import com.maogogo.mywork.thrift.{ Row => TRow, _ }
+//import com.maogogo.mywork.webapp.thrift.SearchPhrase
 
-trait BaseDao { self =>
+trait Dao { self =>
 
-  implicit def optionToParameter(p: Option[Any]): Parameter = Parameter.unsafeWrap(p.getOrElse(null))
+  implicit def anyToParameter(p: Option[Any]): Parameter = Parameter.unsafeWrap(p.getOrElse(null))
+  implicit def seqToParameter(ps: Seq[Any]): Parameter = ps.map(Parameter.unsafeWrap)
+
+  type Bytes = Array[Byte]
 
   def result[T](convert: Row => Option[T]): PartialFunction[Any, Option[T]] = {
     case rs: ResultSet => rs.rows.headOption.flatMap(convert)
@@ -22,17 +23,27 @@ trait BaseDao { self =>
     case _ => Seq.empty[T]
   }
 
-  def executeCount: PartialFunction[Any, Int] = {
-    case rs: ResultSet =>
-      rs.rows.headOption.flatMap { row =>
-        row.fields.headOption.map { field => row(field.name).asInt }
-      }.getOrElse(-1)
-    case _ => -1
-  }
-
   def executeUpdate(r: Result): Int = r match {
     case OK(rows, _, _, _, _) => rows.toInt
     case _ => -1
+  }
+
+  def rowToArray(row: Row): Option[Seq[String]] = {
+    Option(row.fields.map { f =>
+      row(f.name).asString
+    })
+  }
+
+  def rowToCells(row: Row): Option[Seq[Cell]] = {
+    Option(
+      row.fields.map { f =>
+        Cell(f.name, row(f.name).asString)
+      })
+  }
+
+  def rowToInt: PartialFunction[Row, Option[Int]] = {
+    case row: Row =>
+      row.fields.headOption.map { field => row(field.name).asInt }
   }
 
   implicit class RichValueOption(v: Option[Value]) {
@@ -98,6 +109,7 @@ trait BaseDao { self =>
       case IntValue(v) => Option(method(v.toString))
       case DoubleValue(v) => Option(method(v.toString))
       case BigDecimalValue(v) => Option(method(v.toString))
+      //TODO (Toan) 这里是日期的时候有问题
       case RawValue(_, _, true, bytes) => Option(method(new String(bytes)))
       case _ => None
     })
@@ -109,26 +121,6 @@ trait BaseDao { self =>
     def asDate[T](method: Date => T) = as[Date, T]({ case DateValue(v) => Option(method(v)) })
 
     def asDate = asDate[Date](x => x)
-
-    def asDatetime[T](method: Date => T) = as[Long, T]({
-      case DateValue(v) => Option(method(v))
-      case x: Timestamp =>
-        Option(method(x))
-      case RawValue(_, charset, true, bytes) =>
-        val br = MysqlBuf.reader(bytes)
-
-        val year = br.readUnsignedShortLE()
-        val month = br.readUnsignedByte()
-        val day = br.readUnsignedByte()
-        val cal = Calendar.getInstance
-        cal.set(year, month - 1, day)
-
-        Option(method(cal.getTime))
-    })
-
-    def asOptionDatetime = asDatetime[Long](x => x.getTime)
-
-    def asDatetime = asOptionDatetime.getOrElse(-1l)
 
     def asBytes[T](method: Bytes => T) = as[Bytes, T]({ case RawValue(_, _, _, v) => Option(method(v)) })
 
@@ -143,4 +135,44 @@ trait BaseDao { self =>
     }
   }
 
+  //  case class PhraseQuery(searchPhrase: SearchPhrase, fields: Seq[String], recordStatus: Boolean = true) {
+  //
+  //    val status = recordStatus match {
+  //      case true => " record_status='1'"
+  //      case _ => ""
+  //    }
+  //
+  //    def getCondition: String = {
+  //      searchPhrase.searchPhrase match {
+  //        case Some(s) if s.nonEmpty => fields.map(x => s"${x} like ?").mkString(" where ", " or ", "") + s" and ${status}"
+  //        case _ => if (status == "") "" else s" where ${status}"
+  //      }
+  //    }
+  //
+  //    def getParams: Seq[Parameter] = {
+  //      searchPhrase.searchPhrase match {
+  //        case Some(s) if s.nonEmpty =>
+  //          val param = s"%${searchPhrase.searchPhrase.getOrElse("").trim}%"
+  //          fields.indices.map(x => Option(param)).map(anyToParameter)
+  //        case _ => Seq.empty
+  //      }
+  //
+  //    }
+  //
+  //    def getValues: Seq[String] = {
+  //      searchPhrase.searchPhrase match {
+  //        case Some(s) if s.nonEmpty =>
+  //          val param = s"%${searchPhrase.searchPhrase.getOrElse("").trim}%"
+  //          fields.indices.map(x => param)
+  //        case _ => Seq.empty
+  //      }
+  //    }
+  //
+  //    def getLimit: String = {
+  //      if (searchPhrase.offset < 0 || searchPhrase.limit < 0) "" else s"limit ${(searchPhrase.offset - 1) * searchPhrase.limit}, ${searchPhrase.limit}"
+  //    }
+  //
+  //  }
+
 }
+

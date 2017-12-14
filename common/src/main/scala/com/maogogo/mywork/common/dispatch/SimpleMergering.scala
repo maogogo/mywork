@@ -7,7 +7,7 @@ trait SimpleMergering {
 
   def mergeMergerReportResp(q: MergerQueryReq, r1: MergerQueryResp, r2: MergerQueryResp): MergerQueryResp = {
     val allRows = r1.rows ++ r2.rows
-    val groupingColumns = q.groupingColumns
+    val groupingColumns = q.querySql.groupingColumns
     val watchers = r1.watchers ++ r2.watchers
 
     //1、先排序

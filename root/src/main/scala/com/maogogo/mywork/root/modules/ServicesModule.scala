@@ -23,10 +23,10 @@ trait ServicesModule extends TwitterModule with BaseConfigModule {
 
   @Provides @Singleton @Named("MergerServers")
   def provideServers(@Inject() config: Config): Seq[MergerService.MethodPerEndpoint] = {
-    config.getObject(s"${RPC.clientPrefix}mergers").map {
+    config.getObject(s"${RPC.rpcClientPrefix}mergers").map {
       case (k, v) =>
         Log.info(s"get MergerService @ ${k}")
-        provideClient[MergerService.MethodPerEndpoint](v.render())
+        provideClient[MergerService.MethodPerEndpoint](v.unwrapped.toString)
     }.toSeq
   }
 
