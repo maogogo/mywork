@@ -28,26 +28,24 @@ class MetaServiceDao @Inject() (@Named("connections") val connections: Seq[DataS
 
   def findProperties: Future[Seq[Property]] = {
 
-    //    for {
-    //      properties <- build {
-    //        _.prepare(s"select * from ${DB.TProperty} where record_state='1'")().map(resultSet { rowToProperty })
-    //      }
-    //      expressions <- build {
-    //        _.prepare(s"select * from ${DB.TPropertyExpression}")().map(resultSet { rowToExpression })
-    //      }
-    //      havingFilters <- build {
-    //        _.prepare(s"select * from ${DB.TPropertyHaving}")().map(resultSet { rowToHavingFilter })
-    //      }
-    //    } yield {
-    //      val expressionMap = expressions.groupBy(_.propertyId)
-    //      properties.map { prop =>
-    //        val propertyHaving = havingFilters.find(_.id == prop.hfilterId.getOrElse(""))
-    //        val propertyExpressions = expressionMap.get(prop.id)
-    //        prop.copy(propertyHaving = propertyHaving, propertyExpressions = propertyExpressions)
-    //      }
-    //    }
-
-    ???
+    for {
+      properties <- build {
+        _.prepare(s"select * from ${DB.TProperty} where record_state='1'")().map(resultSet { rowToProperty })
+      }
+      expressions <- build {
+        _.prepare(s"select * from ${DB.TPropertyExpression}")().map(resultSet { rowToExpression })
+      }
+      havingFilters <- build {
+        _.prepare(s"select * from ${DB.TPropertyHaving}")().map(resultSet { rowToHavingFilter })
+      }
+    } yield {
+      val expressionMap = expressions.groupBy(_.propertyId)
+      properties.map { prop =>
+        val propertyHaving = havingFilters.find(_.id == prop.hfilterId.getOrElse(""))
+        val propertyExpressions = expressionMap.get(prop.id)
+        prop.copy(propertyHaving = propertyHaving, propertyExpressions = propertyExpressions)
+      }
+    }
   }
 
   def findTables: Future[Seq[Table]] = {
@@ -58,40 +56,38 @@ class MetaServiceDao @Inject() (@Named("connections") val connections: Seq[DataS
   }
 
   def findTableProperties: Future[Seq[TableProperties]] = {
-    //    for {
-    //      tables <- findTables
-    //      properties <- findProperties
-    //      tabProps <- build {
-    //        _.prepare(s"select * from ${DB.TTableProperty}")().map(resultSet { rowToTablePropertyRelate })
-    //      }
-    //    } yield {
-    //      tabProps.groupBy(_.tableId).toSeq.map {
-    //        case (tableId, tablePropertyRelates) =>
-    //          val tableOption = tables.find(_.id == tableId)
-    //
-    //          if (tableOption.isEmpty)
-    //            throw new ServiceException(s"can not Table by id : ${tableId}")
-    //
-    //          val props = tablePropertyRelates.map { relate =>
-    //            val propertyOption = properties.find(_.id == relate.propertyId)
-    //            if (propertyOption.isEmpty)
-    //              throw new ServiceException(s"can not Property by id : ${relate.propertyId} for Table[${tableId}]")
-    //            propertyOption.get.copy(tableCellColumn = Option(relate.cellColumn), tableCellFiltering = Option(relate.cellFiltering))
-    //          }
-    //          TableProperties(tableOption.get, props)
-    //      }
-    //    }
+    for {
+      tables <- findTables
+      properties <- findProperties
+      tabProps <- build {
+        _.prepare(s"select * from ${DB.TTableProperty}")().map(resultSet { rowToTablePropertyRelate })
+      }
+    } yield {
+      tabProps.groupBy(_.tableId).toSeq.map {
+        case (tableId, tablePropertyRelates) =>
+          val tableOption = tables.find(_.id == tableId)
 
-    ???
+          if (tableOption.isEmpty)
+            throw new ServiceException(s"can not Table by id : ${tableId}")
+
+          val props = tablePropertyRelates.map { relate =>
+            val propertyOption = properties.find(_.id == relate.propertyId)
+            if (propertyOption.isEmpty)
+              throw new ServiceException(s"can not Property by id : ${relate.propertyId} for Table[${tableId}]")
+            propertyOption.get.copy(tableCellColumn = Option(relate.cellColumn), tableCellFiltering = Option(relate.cellFiltering))
+          }
+          TableProperties(tableOption.get, props)
+      }
+    }
   }
 
-  def rowToTable(row: Row): Option[Table] = ???
-  //    Option(Table(
-  //      id = row("id").asString,
-  //      label = row("label").asString,
-  //      tableName = row("table_name").asString,
-  //      dbSchema = row("db_schema").asOptionString,
-  //      isListing = row("is_listing").asOptionBool.getOrElse(false)))
+  def rowToTable(row: Row): Option[Table] =
+    Option(Table(
+      id = row("id").asString,
+      label = row("label").asString,
+      tableName = row("table_name").asString,
+      dbSchema = row("db_schema").asOptionString,
+      isListing = row("is_listing").asOptionBool.getOrElse(false)))
 
   def rowToProperty(row: Row): Option[Property] = {
     val cellType = row("cell_type").asOptionInt.getOrElse(9)

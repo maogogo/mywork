@@ -10,6 +10,7 @@ object Dependencies {
     val slf4j = "1.7.25"
     val logback = "1.2.3"
     val config = "1.3.2"
+    val racc = "0.0.3"
     val guava = "23.0"
     val lang3 = "3.7"
     val json4s = "3.5.3"
@@ -51,6 +52,7 @@ object Dependencies {
     "ch.qos.logback" % "logback-classic" % Versions.logback,
     "ch.qos.logback" % "logback-access" % Versions.logback,
     "com.typesafe" % "config" % Versions.config,
+    "com.github.racc" % "typesafeconfig-guice" % Versions.racc,
     "org.apache.commons" % "commons-lang3" % Versions.lang3,
     "com.google.guava" % "guava" % Versions.guava,
     "org.json4s" %% "json4s-native" % Versions.json4s,

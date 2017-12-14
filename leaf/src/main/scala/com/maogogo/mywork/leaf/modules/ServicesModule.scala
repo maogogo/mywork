@@ -8,7 +8,7 @@ import com.google.inject.{ Provides, Singleton }
 import javax.inject.{ Inject, Named }
 import com.typesafe.config.Config
 
-trait ServicesModule extends TwitterModule with BaseConfigModule with DataSourceModule {
+class ServicesModule(implicit config: Config) extends TwitterModule with BaseModule with DataSourceModule {
   //  lazy val log = LoggerFactory.getLogger(this.getClass)
 
   override def configure: Unit = {
@@ -22,5 +22,3 @@ trait ServicesModule extends TwitterModule with BaseConfigModule with DataSource
     s"leaf" -> injector.instance[LeafService.MethodPerEndpoint])
 
 }
-
-object ServicesModule extends ServicesModule

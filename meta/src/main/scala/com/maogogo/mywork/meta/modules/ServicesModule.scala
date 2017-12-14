@@ -12,7 +12,7 @@ import com.maogogo.mywork.meta.service.MetaServiceImpl
 import com.maogogo.mywork.common.cache._
 import com.maogogo.mywork.meta.service.MetaServiceDao
 
-trait ServicesModule extends TwitterModule with BaseConfigModule with DataSourceModule {
+class ServicesModule(implicit config: Config) extends TwitterModule with BaseModule with DataSourceModule {
 
   override def configure: Unit = {
     bindSingleton[MetaServiceDao]
@@ -27,5 +27,3 @@ trait ServicesModule extends TwitterModule with BaseConfigModule with DataSource
     s"engine" -> injector.instance[EngineService.MethodPerEndpoint])
 
 }
-
-object ServicesModule extends ServicesModule

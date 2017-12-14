@@ -8,29 +8,30 @@ import com.maogogo.mywork.common.utils.ThreeDesUtil
 import com.twitter.finagle.client.DefaultPool
 import com.twitter.finagle.Mysql
 import com.twitter.util.Duration
+import javax.inject.Inject
+import com.github.racc.tscg.TypesafeConfig
 
 trait DataSourceModule { self =>
 
   private[this] val namespace = "mysql"
 
   @Provides @Singleton @Named("connections")
-  def getConnections(implicit config: Config): Seq[DataSourcePool] = {
-
-    val partitions = config.getInt(s"${namespace}.partitions")
-    val username = config.getString(s"${namespace}.username")
-    val encrypt = config.getBoolean(s"${namespace}.encrypt")
+  def getConnections(
+    @Inject()@TypesafeConfig("mysql.host") host: String,
+    @TypesafeConfig("mysql.database") database: String,
+    @TypesafeConfig("mysql.pool") pool: Int,
+    @TypesafeConfig("mysql.testing") testing: Boolean,
+    @TypesafeConfig("mysql.username") username: String,
+    @TypesafeConfig("mysql.password") passwordHash: String,
+    @TypesafeConfig("mysql.partitions") partitions: Int,
+    @TypesafeConfig("mysql.encrypt") encrypt: Boolean): Seq[DataSourcePool] = {
 
     val password = encrypt match {
-      case true => ThreeDesUtil.decrypt(config.getString(s"${namespace}.password"))
-      case _ => config.getString(s"${namespace}.password")
+      case true => ThreeDesUtil.decrypt(passwordHash)
+      case _ => passwordHash
     }
 
-    val hosts = config.getString(s"${namespace}.host").split(",")
-    val database = config.getString(s"${namespace}.database")
-    val pool = config.getInt(s"${namespace}.pool")
-    val testing = config.getBoolean(s"${namespace}.testing")
-
-    hosts.toSeq.map { host =>
+    host.split(",").toSeq.map { host =>
       val clients = ((0 until partitions) map { i =>
         getConnection(host, username, password, database, pool)
       })

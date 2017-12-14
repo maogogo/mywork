@@ -114,10 +114,11 @@ struct ServiceWatcher {
 
 struct Table {
   1: TABLE_ID id
-  2: string db_table_name
-  3: optional bool is_listing
+  2: string label
+  3: string table_name
   4: optional string db_schema
-  5: optional string force_index
+  5: bool is_listing = false
+  6: optional string system_id
 }
 
 struct TableProperties {

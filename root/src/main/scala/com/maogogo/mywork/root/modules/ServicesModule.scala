@@ -9,27 +9,30 @@ import com.typesafe.config.Config
 import scala.collection.JavaConversions._
 import com.maogogo.mywork.root.service.RootServiceImpl
 import scala.collection.JavaConverters._
+import com.github.racc.tscg.TypesafeConfigModule
+import com.github.racc.tscg.TypesafeConfig
 
-trait ServicesModule extends TwitterModule with BaseConfigModule {
+class ServicesModule(implicit config: Config) extends TwitterModule with BaseModule {
 
   override def configure: Unit = {
-    bindSingleton[EngineService.MethodPerEndpoint].toInstance(zookClient[EngineService.MethodPerEndpoint]("engine"))
-    bindSingleton[MetaService.MethodPerEndpoint].toInstance(zookClient[MetaService.MethodPerEndpoint]("meta"))
+
+    install(TypesafeConfigModule.fromConfigWithPackage(config, ""))
+    bindSingleton[Config].toInstance(config)
+    
+    //bindSingleton[EngineService.MethodPerEndpoint].toInstance(zookClient[EngineService.MethodPerEndpoint]("engine"))
+    //bindSingleton[MetaService.MethodPerEndpoint].toInstance(zookClient[MetaService.MethodPerEndpoint]("meta"))
     bindSingleton[RootService.MethodPerEndpoint].to[RootServiceImpl]
   }
 
   override def provideServices(injector: com.twitter.inject.Injector) = Map(
     s"root" -> injector.instance[RootService.MethodPerEndpoint])
 
+  //MergerService.MethodPerEndpoint
   @Provides @Singleton @Named("MergerServers")
-  def provideServers(@Inject() config: Config): Seq[MergerService.MethodPerEndpoint] = {
-    config.getObject(s"${RPC.rpcClientPrefix}mergers").map {
-      case (k, v) =>
-        Log.info(s"get MergerService @ ${k}")
-        provideClient[MergerService.MethodPerEndpoint](v.unwrapped.toString)
-    }.toSeq
+  def provideServers(@Inject()@TypesafeConfig("rpc.client.mergers") mergers: java.util.Map[String, String]) = {
+    provideClients[MergerService.MethodPerEndpoint](mergers.toSeq)
   }
 
 }
 
-object ServicesModule extends ServicesModule
+//object ServicesModule extends ServicesModule

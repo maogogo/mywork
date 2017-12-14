@@ -5,8 +5,8 @@ import com.twitter.util.Future
 import javax.inject.Inject
 import com.maogogo.mywork.common.dispatch.MergeringDispatchImpl
 
-class RootServiceImpl @Inject() (meta: MetaService.MethodPerEndpoint, engine: EngineService.MethodPerEndpoint,
-  dispatch: MergeringDispatchImpl) extends RootService.MethodPerEndpoint {
+class RootServiceImpl extends RootService.MethodPerEndpoint { //@Inject() (meta: MetaService.MethodPerEndpoint, engine: EngineService.MethodPerEndpoint,
+  //dispatch: MergeringDispatchImpl) extends RootService.MethodPerEndpoint {
 
   /**
    *

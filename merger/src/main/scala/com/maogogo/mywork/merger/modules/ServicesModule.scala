@@ -11,8 +11,9 @@ import scala.collection.JavaConversions._
 import com.twitter.finagle.ThriftMux
 import com.maogogo.mywork.merger.service.MergerServiceImpl
 import com.maogogo.mywork.common.dispatch.LeafingDispatchImpl
+import com.github.racc.tscg.TypesafeConfig
 
-trait ServicesModule extends TwitterModule with BaseConfigModule {
+class ServicesModule(implicit config: Config) extends TwitterModule with BaseModule {
 
   override def configure: Unit = {
     bindSingleton[LeafService.MethodPerEndpoint].to[LeafingDispatchImpl]
@@ -23,14 +24,9 @@ trait ServicesModule extends TwitterModule with BaseConfigModule {
     s"merger" -> injector.instance[MergerService.MethodPerEndpoint])
 
   @Provides @Singleton @Named("LeafServers")
-  def provideServers(@Inject() config: Config): Seq[LeafService.MethodPerEndpoint] = {
-    config.getObject(s"${RPC.rpcClientPrefix}leafs").map {
-      case (k, v) =>
-        Log.info(s"get LeafService @ ${k}")
-        provideClient[LeafService.MethodPerEndpoint](v.unwrapped.toString)
-    }.toSeq
+  def provideServers(@Inject()@TypesafeConfig("rpc.client.leafs") leafs: java.util.Map[String, String]) = {
+    provideClients[LeafService.MethodPerEndpoint](leafs.toSeq)
   }
-
+  
 }
 
-object ServicesModule extends ServicesModule
