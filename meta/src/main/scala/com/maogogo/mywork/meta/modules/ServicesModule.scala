@@ -9,15 +9,14 @@ import com.typesafe.config.Config
 import scala.collection.JavaConversions._
 import com.maogogo.mywork.meta.engine.EngineServiceImpl
 import com.maogogo.mywork.meta.service.MetaServiceImpl
-import com.maogogo.mywork.meta.dao.MetaServiceDao
 import com.maogogo.mywork.common.cache._
-import com.maogogo.mywork.meta.dao.MetaServiceCacheData
+import com.maogogo.mywork.meta.service.MetaServiceDao
 
 trait ServicesModule extends TwitterModule with BaseConfigModule with DataSourceModule {
 
   override def configure: Unit = {
     bindSingleton[MetaServiceDao]
-    bindSingleton[MetaServiceCacheData]
+    //bindSingleton[MetaServiceCacheData]
 
     bindSingleton[EngineService.MethodPerEndpoint].to[EngineServiceImpl]
     bindSingleton[MetaService.MethodPerEndpoint].to[MetaServiceImpl]

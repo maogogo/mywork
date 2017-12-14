@@ -24,10 +24,10 @@ trait ServicesModule extends TwitterModule with BaseConfigModule {
 
   @Provides @Singleton @Named("LeafServers")
   def provideServers(@Inject() config: Config): Seq[LeafService.MethodPerEndpoint] = {
-    config.getObject(s"${RPC.clientPrefix}leafs").map {
+    config.getObject(s"${RPC.rpcClientPrefix}leafs").map {
       case (k, v) =>
         Log.info(s"get LeafService @ ${k}")
-        provideClient[LeafService.MethodPerEndpoint](v.render())
+        provideClient[LeafService.MethodPerEndpoint](v.unwrapped.toString)
     }.toSeq
   }
 

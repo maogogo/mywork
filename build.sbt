@@ -28,14 +28,6 @@ lazy val common = module("common", false)
         mysqlDependency ++ redisDependency ++ mongoDependency ++ jdbcDependency: _*)
   )
 
-lazy val rest = module("rest")
-  .dependsOn(common % "test->test;compile->compile")
-  .settings(
-    libraryDependencies ++=
-      mcompile(finchDependency: _*) ++
-      mtest(testDependency: _*)
-  )
-
 lazy val merger = module("merger")
   .dependsOn(common % "test->test;compile->compile")
   .settings(libraryDependencies ++= mtest(testDependency: _*))
@@ -63,5 +55,5 @@ lazy val backend = module("backend")
   )
 
 lazy val all = Project(id = Globals.name, base = file(".")) //(project in file("."))
-  .aggregate(thrift, backend, client, common, rest, root, meta, merger, leaf)
+  .aggregate(thrift, backend, client, common, root, meta, merger, leaf)
   //.settings(defaultScalariformSettings: _*)

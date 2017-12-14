@@ -17,7 +17,7 @@ class RootServiceImpl @Inject() (meta: MetaService.MethodPerEndpoint, engine: En
    *
    *
    */
-  def queryReport(req: RootQueryReq): Future[RootQueryResp] = {
+  def queryReport(req: ReportReq): Future[ReportResp] = {
 
     //    for {
     //      x <- engine.engining(req) handle {
@@ -40,5 +40,17 @@ class RootServiceImpl @Inject() (meta: MetaService.MethodPerEndpoint, engine: En
   }
 
   def build(rows: Seq[Row])(fallback: Seq[Row] => Seq[Row]): Seq[Row] = fallback(rows)
+
+  def executeReport(req: QuerySql): Future[ReportResp] = {
+    ???
+  }
+
+  def executeToStaging(req: QuerySql): Future[ExecuteResp] = {
+    ???
+  }
+
+  def queryToStaging(req: ReportReq): Future[ExecuteResp] = {
+    ???
+  }
 
 }
