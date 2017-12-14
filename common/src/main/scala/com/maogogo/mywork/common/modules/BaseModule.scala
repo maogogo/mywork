@@ -9,9 +9,9 @@ trait BaseModule { self =>
   //
   def provideServices(injector: com.twitter.inject.Injector): Map[String, ThriftService]
   //
-  def services(injector: com.twitter.inject.Injector) = {
+  def services(injector: com.twitter.inject.Injector)(implicit config: Config) = {
     val rand = new scala.util.Random
-    val config = injector.instance[Config]
+    //val config = injector.instance[Config]
     //val filter = new HandlerFilter[com.twitter.finagle.mux.Request, com.twitter.finagle.mux.Response]
     provideServices(injector).map { kv =>
       val (name, service) = kv

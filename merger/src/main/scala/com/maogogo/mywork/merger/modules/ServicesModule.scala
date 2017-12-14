@@ -27,6 +27,6 @@ class ServicesModule(implicit config: Config) extends TwitterModule with BaseMod
   def provideServers(@Inject()@TypesafeConfig("rpc.client.leafs") leafs: java.util.Map[String, String]) = {
     provideClients[LeafService.MethodPerEndpoint](leafs.toSeq)
   }
-  
+
 }
 

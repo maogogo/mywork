@@ -18,7 +18,7 @@ class ServicesModule(implicit config: Config) extends TwitterModule with BaseMod
 
     install(TypesafeConfigModule.fromConfigWithPackage(config, ""))
     bindSingleton[Config].toInstance(config)
-    
+
     //bindSingleton[EngineService.MethodPerEndpoint].toInstance(zookClient[EngineService.MethodPerEndpoint]("engine"))
     //bindSingleton[MetaService.MethodPerEndpoint].toInstance(zookClient[MetaService.MethodPerEndpoint]("meta"))
     bindSingleton[RootService.MethodPerEndpoint].to[RootServiceImpl]
