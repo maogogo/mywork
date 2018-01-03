@@ -41,6 +41,8 @@ service RootService {
   
   ExecuteResp queryToStaging(ReportReq req) throws (common.ServiceException e)
   ExecuteResp executeToStaging(common.QuerySql req) throws (common.ServiceException e)
+  
+  string hi(string name)
 }
 
 struct MergerQueryReq {

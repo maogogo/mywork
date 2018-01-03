@@ -1,17 +1,13 @@
 package com.maogogo.mywork.leaf.modules
 
-import com.twitter.inject.TwitterModule
-import com.maogogo.mywork.common.modules._
-import org.slf4j.LoggerFactory
-import com.maogogo.mywork.thrift._
-import com.google.inject.{ Provides, Singleton }
-import javax.inject.{ Inject, Named }
+import com.maogogo.mywork.common.inject.MainModule
+import com.maogogo.mywork.thrift.LeafService
 import com.typesafe.config.Config
 
-class ServicesModule(implicit config: Config) extends TwitterModule with BaseModule with DataSourceModule {
+class ServicesModule(implicit val config: Config) extends MainModule { //extends TwitterModule with BaseModule with DataSourceModule {
   //  lazy val log = LoggerFactory.getLogger(this.getClass)
 
-  override def configure: Unit = {
+  override def injectModule: Unit = {
     //    bindSingleton[MetaService.MethodPerEndpoint].toInstance(zookClient[MetaService.MethodPerEndpoint]("meta"))
     //    bindSingleton[MetaDataConfig]
     //    bindSingleton[LeafServiceDao]

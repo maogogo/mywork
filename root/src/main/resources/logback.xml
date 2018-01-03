@@ -56,6 +56,8 @@
 	<logger name="io.netty" level="ERROR" additivity="true" />
 	<logger name="org.apache.zookeeper" level="ERROR" additivity="true" />
 	<logger name="com.redis" level="ERROR" additivity="true" />
+	<logger name="org.reflections" level="ERROR" additivity="true" />
+	
 	<logger name="com.maogogo" level="DEBUG" additivity="true" />
 
 	<!-- Root Logger -->

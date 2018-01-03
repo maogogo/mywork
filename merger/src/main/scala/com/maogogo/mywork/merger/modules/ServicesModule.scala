@@ -1,23 +1,21 @@
 package com.maogogo.mywork.merger.modules
 
-import com.twitter.inject.TwitterModule
-import com.maogogo.mywork.common.modules._
-import org.slf4j.LoggerFactory
-import com.maogogo.mywork.thrift._
-import com.google.inject.{ Provides, Singleton }
-import javax.inject.{ Inject, Named }
-import com.typesafe.config.Config
 import scala.collection.JavaConversions._
-import com.twitter.finagle.ThriftMux
-import com.maogogo.mywork.merger.service.MergerServiceImpl
-import com.maogogo.mywork.common.dispatch.LeafingDispatchImpl
+
+import com.google.inject.{ Provides, Singleton }
+import com.maogogo.mywork.common.inject.MainModule
+import com.typesafe.config.Config
+
+import javax.inject.Named
+import com.maogogo.mywork.thrift._
+import javax.inject.Inject
 import com.github.racc.tscg.TypesafeConfig
 
-class ServicesModule(implicit config: Config) extends TwitterModule with BaseModule {
+class ServicesModule(implicit val config: Config) extends MainModule { //extends TwitterModule with BaseModule {
 
-  override def configure: Unit = {
-    bindSingleton[LeafService.MethodPerEndpoint].to[LeafingDispatchImpl]
-    bindSingleton[MergerService.MethodPerEndpoint].to[MergerServiceImpl]
+  override def injectModule: Unit = {
+    //    bindSingleton[LeafService.MethodPerEndpoint].to[LeafingDispatchImpl]
+    //    bindSingleton[MergerService.MethodPerEndpoint].to[MergerServiceImpl]
   }
 
   override def provideServices(injector: com.twitter.inject.Injector) = Map(

@@ -26,8 +26,6 @@ sealed trait ConfigModule { self =>
     }
 
     val path = ConfigFactory.load.getString(env)
-    //Log.info(s"\n ===>> loading path: ${path} by env: ${env}")
-
     ConfigFactory parseFile (new File(path)) resolve
   }
 

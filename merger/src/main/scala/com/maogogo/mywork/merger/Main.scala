@@ -1,36 +1,20 @@
 package com.maogogo.mywork.merger
 
-import com.twitter.inject.server.TwitterServer
-import com.twitter.util._
-import java.net.InetSocketAddress
-import com.twitter.inject.server.TwitterServer
-import com.typesafe.config.Config
-import com.twitter.logging.Level
-import com.twitter.logging.Logging.LevelFlaggable
+import com.maogogo.mywork.common.inject.MainServer
 import com.maogogo.mywork.merger.modules.ServicesModule
-import com.maogogo.mywork.common.modules.ConfigModule
+import com.twitter.util.Await
+import com.twitter.util.TimeoutException
 
-object Main extends TwitterServer {
-
-  implicit val config: Config = ConfigModule.provideConfig
-  override val adminPort = flag("admin.port", new InetSocketAddress(config.getInt("admin.port")), "")
-
-  val level: Level = Level.ERROR
-  override val levelFlag = flag("log.level", level, "")
+object Main extends MainServer {
 
   lazy val servicesModule = new ServicesModule
-  override def modules = Seq(servicesModule)
 
-  override def postWarmup() {
-
+  override def injectServer: Unit = {
     val services = servicesModule.services(injector)
-
     Await.all(services: _*)
-    info(s"${logo}\t${adminPort}\t${config.origin}")
-    Await.ready(adminHttpServer)
   }
 
-  private val logo = """
+  override val logo = """
       __  ___                         
      /  |/  /__  _________ ____  _____
     / /|_/ / _ \/ ___/ __ `/ _ \/ ___/

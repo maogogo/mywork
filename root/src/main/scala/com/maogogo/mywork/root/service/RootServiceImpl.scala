@@ -5,8 +5,13 @@ import com.twitter.util.Future
 import javax.inject.Inject
 import com.maogogo.mywork.common.dispatch.MergeringDispatchImpl
 
-class RootServiceImpl extends RootService.MethodPerEndpoint { //@Inject() (meta: MetaService.MethodPerEndpoint, engine: EngineService.MethodPerEndpoint,
+class RootServiceImpl @Inject() (meta: MetaService.MethodPerEndpoint) extends RootService.MethodPerEndpoint { //@Inject() (meta: MetaService.MethodPerEndpoint, engine: EngineService.MethodPerEndpoint,
   //dispatch: MergeringDispatchImpl) extends RootService.MethodPerEndpoint {
+
+  def hi(name: String): Future[String] = {
+    meta.getRandomCache()
+    //Future.value(s"hello:$name")
+  }
 
   /**
    *
@@ -39,7 +44,7 @@ class RootServiceImpl extends RootService.MethodPerEndpoint { //@Inject() (meta:
     ???
   }
 
-  def build(rows: Seq[Row])(fallback: Seq[Row] => Seq[Row]): Seq[Row] = fallback(rows)
+  def build(rows: Seq[Row])(fallback: Seq[Row] ⇒ Seq[Row]): Seq[Row] = fallback(rows)
 
   def executeReport(req: QuerySql): Future[ReportResp] = {
     ???

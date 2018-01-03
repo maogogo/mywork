@@ -4,12 +4,13 @@ import javax.inject.{ Inject, Named }
 import com.maogogo.mywork.common.modules.DataSourcePool
 import com.maogogo.mywork.common.jdbc.ConnectionBuilder
 import com.twitter.util.Future
-import com.maogogo.mywork.thrift.{ Row => TRow, _ }
+import com.maogogo.mywork.thrift.{ Row ⇒ TRow, _ }
 import com.twitter.finagle.mysql.Row
+import com.google.inject.{ Provides, Singleton }
+import com.maogogo.mywork.common.jdbc._
 
-class MetaServiceDao @Inject() (@Named("connections") val connections: Seq[DataSourcePool]) extends ConnectionBuilder {
-
-  val shardId: Int = 0
+@Provides @Singleton
+class MetaServiceDao @Inject() (implicit builder: ConnectionBuilder) {
 
   object DB {
     //维度指标
@@ -24,53 +25,71 @@ class MetaServiceDao @Inject() (@Named("connections") val connections: Seq[DataS
     val TPropertyHaving = "t_property_having"
   }
 
-  def optionStringToSeq(str: Option[String]): Option[Seq[String]] = str.map(_.split(",", -1).filter(_.nonEmpty))
+  def optionStringToSeq(str: Option[String]): Option[Seq[String]] = str.map(_.split(",").map(_.trim).filter(_.nonEmpty))
+
+  def findTest: Future[Seq[Seq[String]]] = {
+    val sql = "select * from t_oauth_access_tokens"
+    SQL {
+      _.prepare(sql)().map(resultSet { rowToKends })
+    }
+  }
+
+  def rowToKends(row: Row): Option[Seq[String]] = {
+    val d = row("user_id").asString
+    val e = row("test").asString
+
+    println("test ===>>>" + e + "#")
+    Option(Seq(d, e))
+  }
 
   def findProperties: Future[Seq[Property]] = {
 
     for {
-      properties <- build {
-        _.prepare(s"select * from ${DB.TProperty} where record_state='1'")().map(resultSet { rowToProperty })
+      properties ← SQL {
+        _.prepare("")().map(resultSet { rowToProperty })
       }
-      expressions <- build {
+      expressions ← SQL {
         _.prepare(s"select * from ${DB.TPropertyExpression}")().map(resultSet { rowToExpression })
       }
-      havingFilters <- build {
+      havingFilters ← SQL {
         _.prepare(s"select * from ${DB.TPropertyHaving}")().map(resultSet { rowToHavingFilter })
       }
     } yield {
       val expressionMap = expressions.groupBy(_.propertyId)
-      properties.map { prop =>
-        val propertyHaving = havingFilters.find(_.id == prop.hfilterId.getOrElse(""))
+
+      properties.map { prop ⇒
+        val propertyHaving = havingFilters.find(_.id == prop.propertyGroup.propertyHaving.map(_.id).getOrElse(""))
+        val propGroup = prop.propertyGroup.copy(propertyHaving = propertyHaving)
         val propertyExpressions = expressionMap.get(prop.id)
-        prop.copy(propertyHaving = propertyHaving, propertyExpressions = propertyExpressions)
+        prop.copy(propertyExpressions = propertyExpressions, propertyGroup = propGroup)
       }
     }
+
   }
 
   def findTables: Future[Seq[Table]] = {
     val sql = s"select * from ${DB.TTable} where record_state='1'"
-    build {
+    SQL {
       _.prepare(sql)().map(resultSet { rowToTable })
     }
   }
 
   def findTableProperties: Future[Seq[TableProperties]] = {
     for {
-      tables <- findTables
-      properties <- findProperties
-      tabProps <- build {
+      tables ← findTables
+      properties ← findProperties
+      tabProps ← SQL {
         _.prepare(s"select * from ${DB.TTableProperty}")().map(resultSet { rowToTablePropertyRelate })
       }
     } yield {
       tabProps.groupBy(_.tableId).toSeq.map {
-        case (tableId, tablePropertyRelates) =>
+        case (tableId, tablePropertyRelates) ⇒
           val tableOption = tables.find(_.id == tableId)
 
           if (tableOption.isEmpty)
             throw new ServiceException(s"can not Table by id : ${tableId}")
 
-          val props = tablePropertyRelates.map { relate =>
+          val props = tablePropertyRelates.map { relate ⇒
             val propertyOption = properties.find(_.id == relate.propertyId)
             if (propertyOption.isEmpty)
               throw new ServiceException(s"can not Property by id : ${relate.propertyId} for Table[${tableId}]")
@@ -91,6 +110,15 @@ class MetaServiceDao @Inject() (@Named("connections") val connections: Seq[DataS
 
   def rowToProperty(row: Row): Option[Property] = {
     val cellType = row("cell_type").asOptionInt.getOrElse(9)
+
+    val propGroup = PropertyGroup(
+      tableEx = row("table_ex").asOptionString,
+      selectingFiltering = row("selecting_filtering").asOptionString,
+      groupingColumns = optionStringToSeq(row("grouping_columns").asOptionString),
+      havingColumns = optionStringToSeq(row("having_columns").asOptionString),
+      propertyHaving = Option(PropertyHaving(id = row("hfilter_id").asString, label = "",
+        hfilterColumn = "", hfilterMethod = "", hfilterSymbol = "", hfilterValue = "")))
+
     Option(Property(
       id = row("id").asString,
       label = row("label").asString,
@@ -99,17 +127,13 @@ class MetaServiceDao @Inject() (@Named("connections") val connections: Seq[DataS
       cellColumn = row("cell_column").asString,
       cellLabel = row("cell_label").asString,
       cellFiltering = row("cell_filtering").asOptionString,
-      selectingFiltering = row("selecting_filter").asOptionString,
       cellValue = row("cell_value").asOptionString,
       aggregationMethod = row("aggregation_method").asOptionString,
-      groupingColumns = optionStringToSeq(row("grouping_columns").asOptionString),
-      havingColumns = optionStringToSeq(row("having_columns").asOptionString),
-      hfilterId = row("hfilter_id").asOptionString,
-      propertyHaving = None,
       valueDisplayFormat = row("value_display_format").asOptionString,
       formulaScript = row("formula_script").asOptionString,
       relateIds = optionStringToSeq(row("relate_ids").asOptionString),
-      tableEx = row("table_ex").asOptionString))
+      propertyGroup = propGroup))
+    //tableEx = row("table_ex").asOptionString))
   }
 
   def rowToExpression(row: Row): Option[PropertyExpression] =

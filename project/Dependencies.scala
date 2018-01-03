@@ -16,16 +16,16 @@ object Dependencies {
     val json4s = "3.5.3"
     val scalaIO = "0.4.3-1"
 
-    val twitter = "17.11.0"
-    val finagle = "17.11.0"
+    val twitter = "17.12.0"
+    val finagle = "17.12.0"
     val guice = "4.1.0"
     val jsr = "3.0.2"
-    val inject = "17.11.0"
+    val inject = "17.12.0"
 
     val finch = "0.15.1"
 
     val thrift = "0.9.3"
-    val scrooge = "17.11.0"
+    val scrooge = "17.12.0"
 
     val solr = "0.0.16"
     val redis = "2.9.0"

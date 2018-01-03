@@ -11,6 +11,7 @@ object Settings {
     organization := Globals.organization,
     version := Globals.version,
     scalaVersion := Globals.scalaVersion,
+    autoScalaLibrary := false,
     //logLevel := Level.Warn,
     //crossScalaVersions  := Globals.crossScalaVersions,
     resolvers ++= Resolvers.repositories,

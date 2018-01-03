@@ -1,22 +1,23 @@
 package com.maogogo.mywork.meta.modules
 
-import com.twitter.inject.TwitterModule
-import com.maogogo.mywork.common.modules._
-import com.maogogo.mywork.thrift._
-import com.google.inject.{ Provides, Singleton }
-import javax.inject.{ Inject, Named }
-import com.typesafe.config.Config
-import scala.collection.JavaConversions._
+import com.maogogo.mywork.common.inject.MainModule
 import com.maogogo.mywork.meta.engine.EngineServiceImpl
-import com.maogogo.mywork.meta.service.MetaServiceImpl
-import com.maogogo.mywork.common.cache._
 import com.maogogo.mywork.meta.service.MetaServiceDao
+import com.maogogo.mywork.meta.service.MetaServiceImpl
+import com.maogogo.mywork.thrift._
+import com.typesafe.config.Config
+import com.maogogo.mywork.common.jdbc.ConnectionBuilder
+import javax.inject.Inject
+import com.github.racc.tscg.TypesafeConfig
+import com.google.inject.{ Provides, Singleton }
+import javax.inject.Named
+import com.maogogo.mywork.common.modules.DataSourceModule
 
-class ServicesModule(implicit config: Config) extends TwitterModule with BaseModule with DataSourceModule {
+class ServicesModule(implicit val config: Config) extends MainModule { //with DataSourceModule {
 
-  override def configure: Unit = {
-    bindSingleton[MetaServiceDao]
-    //bindSingleton[MetaServiceCacheData]
+  override def injectModule: Unit = {
+    //bindSingleton[MetaServiceDao]
+    bindSingleton[ConnectionBuilder]
 
     bindSingleton[EngineService.MethodPerEndpoint].to[EngineServiceImpl]
     bindSingleton[MetaService.MethodPerEndpoint].to[MetaServiceImpl]

@@ -45,11 +45,12 @@ struct PropertyBinding {
 }
 
 enum PropertyType {
-  SELECTING = 1
-  GROUPING = 2
-  FILTERING = 3
-  COMBINING = 4
-  UNKNOWN = 9
+  SELECTING 			= 1
+  GROUPING 			= 2
+  FILTERING			= 3
+  COMMON_GROUPING 	= 4
+  COMBINING 			= 5
+  UNKNOWN 			= 9
 }
 
 struct PropertyExpression {
@@ -68,6 +69,14 @@ struct PropertyHaving {
   6: string hfilter_value
 }
 
+struct PropertyGroup {
+  1: optional string table_ex
+  2: optional string selecting_filtering
+  3: optional list<string> grouping_columns						#分组字段
+  4: optional list<string> having_columns						#过滤分组
+  5: optional PropertyHaving property_having
+}
+
 struct Property {
   1:  PROPERTY_ID id
   2:  string label
@@ -76,22 +85,17 @@ struct Property {
   5:  string cell_column											#列名
   6:  string cell_label											#虚拟列名
   7:  optional string cell_filtering								#过滤条件
-  9:  optional string selecting_filtering						#指标固定条件
-  10: optional string cell_value									#指标 配合过滤条件使用
-  11: optional string aggregation_method 						#汇聚方法
-  12: optional list<string> grouping_columns						#分组字段
-  13: optional list<string> having_columns						#过滤分组
-  14: optional string hfilter_id
-  15: optional PropertyHaving property_having
-  16: optional string value_display_format
-  17: optional string formula_script
-  18: optional list<string> relate_ids							#关联字段
-  19: optional string table_ex									#并联表
-  20: optional list<PropertyExpression> property_expressions		#字段转换
-  21: optional string table_cell_column							# 所在表对应的where条件
-  22: optional string table_cell_filtering						# 所在表对应的字段
-  23: optional list<string> values								# 维度 where条件 参数
-  24: optional string parent_id									# 复合指标有用
+  8:  optional string cell_value									#指标 配合过滤条件使用
+  9:  optional string aggregation_method 						#汇聚方法
+  10: optional string value_display_format
+  11: optional string formula_script
+  12: optional list<string> relate_ids							#关联字段
+  13: optional list<PropertyExpression> property_expressions		#字段转换
+  14: optional string table_cell_column							# 所在表对应的where条件
+  15: optional string table_cell_filtering						# 所在表对应的字段
+  16: optional list<string> values								# 维度 where条件 参数
+  17: optional PROPERTY_ID parent_id								# 复合指标有用
+  18: PropertyGroup property_group
 }
 
 struct MasterOrSlave {

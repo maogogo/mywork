@@ -1,38 +1,41 @@
 package com.maogogo.mywork.common.modules
 
-import com.maogogo.mywork.common._
-import com.google.inject.{ Provides, Singleton }
-import javax.inject.Named
-import com.typesafe.config.Config
+import com.google.inject.Provides
+import com.google.inject.Singleton
+import com.maogogo.mywork.common.TransactionsClient
 import com.maogogo.mywork.common.utils.ThreeDesUtil
-import com.twitter.finagle.client.DefaultPool
 import com.twitter.finagle.Mysql
+import com.twitter.finagle.client.DefaultPool
 import com.twitter.util.Duration
+import com.typesafe.config.Config
+
+import javax.inject.Named
 import javax.inject.Inject
-import com.github.racc.tscg.TypesafeConfig
 
-trait DataSourceModule { self =>
+trait DataSourceModule { self ⇒
 
-  private[this] val namespace = "mysql"
+  @Provides @Singleton @Named("shardId")
+  def provideShardId(implicit config: Config): Int = config.getInt("shard.id")
 
   @Provides @Singleton @Named("connections")
-  def getConnections(
-    @Inject()@TypesafeConfig("mysql.host") host: String,
-    @TypesafeConfig("mysql.database") database: String,
-    @TypesafeConfig("mysql.pool") pool: Int,
-    @TypesafeConfig("mysql.testing") testing: Boolean,
-    @TypesafeConfig("mysql.username") username: String,
-    @TypesafeConfig("mysql.password") passwordHash: String,
-    @TypesafeConfig("mysql.partitions") partitions: Int,
-    @TypesafeConfig("mysql.encrypt") encrypt: Boolean): Seq[DataSourcePool] = {
+  def getConnections(implicit config: Config): Seq[DataSourcePool] = {
+
+    val host = config.getString("mysql.host")
+    val database = config.getString("mysql.database")
+    val pool = config.getInt("mysql.pool")
+    val testing = config.getBoolean("mysql.testing")
+    val username = config.getString("mysql.username")
+    val passwordHash = config.getString("mysql.password")
+    val encrypt = config.getBoolean("mysql.encrypt")
+    val partitions = config.getInt("mysql.partitions")
 
     val password = encrypt match {
-      case true => ThreeDesUtil.decrypt(passwordHash)
-      case _ => passwordHash
+      case true ⇒ ThreeDesUtil.decrypt(passwordHash)
+      case _ ⇒ passwordHash
     }
 
-    host.split(",").toSeq.map { host =>
-      val clients = ((0 until partitions) map { i =>
+    host.split(",").toSeq.map { host ⇒
+      val clients = ((0 until partitions) map { i ⇒
         getConnection(host, username, password, database, pool)
       })
 
@@ -41,7 +44,7 @@ trait DataSourceModule { self =>
 
   }
 
-  private[this] def getConnection(host: String, username: String, password: String, database: String, pool: Int): TransactionsClient = {
+  def getConnection(host: String, username: String, password: String, database: String, pool: Int): TransactionsClient = {
     val client = Mysql.client
       .withCredentials(username, password)
       .configured(DefaultPool.Param(
