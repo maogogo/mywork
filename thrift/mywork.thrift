@@ -5,7 +5,7 @@ include "common.thrift"
 
 struct ReportReq {
   1: common.TABLE_ID table_id
-  2: optional list<common.PropertyBinding> selecting
+  2: optional list<string> selecting
   3: optional list<common.PropertyBinding> grouping
   4: optional list<common.PropertyBinding> filtering
   5: optional common.Paging paging

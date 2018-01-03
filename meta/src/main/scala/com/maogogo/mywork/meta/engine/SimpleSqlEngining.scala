@@ -1,8 +1,21 @@
-//package com.maogogo.mywork.meta.engine
-//
-//import com.maogogo.mywork.thrift._
-//
-//class SimpleSqlEngining extends SqlEngining {
+package com.maogogo.mywork.meta.engine
+
+import com.maogogo.mywork.thrift._
+
+class SimpleSqlEngining(val req: ReportReq, val tabProp: TableProperties) extends SqlEngining {
+
+  //行专列、复杂计算
+
+  def packing: Seq[QuerySql] = {
+
+    
+    
+    
+    
+    ???
+  }
+
+}
 //
 //  def packing(tableProperty: TableProperty, req: RootQueryReq): Seq[QuerySql] = {
 //

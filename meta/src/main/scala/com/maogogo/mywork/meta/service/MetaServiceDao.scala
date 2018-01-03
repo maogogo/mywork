@@ -27,20 +27,12 @@ class MetaServiceDao @Inject() (implicit builder: ConnectionBuilder) {
 
   def optionStringToSeq(str: Option[String]): Option[Seq[String]] = str.map(_.split(",").map(_.trim).filter(_.nonEmpty))
 
-  def findTest: Future[Seq[Seq[String]]] = {
-    val sql = "select * from t_oauth_access_tokens"
-    SQL {
-      _.prepare(sql)().map(resultSet { rowToKends })
-    }
-  }
-
-  def rowToKends(row: Row): Option[Seq[String]] = {
-    val d = row("user_id").asString
-    val e = row("test").asString
-
-    println("test ===>>>" + e + "#")
-    Option(Seq(d, e))
-  }
+  //  def findTest: Future[Seq[Seq[String]]] = {
+  //    val sql = "select * from t_oauth_access_tokens"
+  //    SQL {
+  //      _.prepare(sql)().map(resultSet { rowToKends })
+  //    }
+  //  }
 
   def findProperties: Future[Seq[Property]] = {
 
@@ -93,7 +85,15 @@ class MetaServiceDao @Inject() (implicit builder: ConnectionBuilder) {
             val propertyOption = properties.find(_.id == relate.propertyId)
             if (propertyOption.isEmpty)
               throw new ServiceException(s"can not Property by id : ${relate.propertyId} for Table[${tableId}]")
-            propertyOption.get.copy(tableCellColumn = Option(relate.cellColumn), tableCellFiltering = Option(relate.cellFiltering))
+
+            val cellColumn = relate.cellColumn match {
+              case Some(c) if c.nonEmpty ⇒ c
+              case _ ⇒ propertyOption.get.cellColumn
+            }
+
+            val cellFiltering = if (relate.cellFiltering.nonEmpty) relate.cellFiltering else propertyOption.get.cellFiltering
+            //这里植入特有的配置(这块可以没有)
+            propertyOption.get.copy(cellColumn = cellColumn, cellFiltering = cellFiltering)
           }
           TableProperties(tableOption.get, props)
       }
@@ -154,8 +154,8 @@ class MetaServiceDao @Inject() (implicit builder: ConnectionBuilder) {
     Option(TablePropertyRelate(
       tableId = row("table_id").asString,
       propertyId = row("property_id").asString,
-      cellColumn = row("cell_column").asString,
-      cellFiltering = row("cell_filtering").asString))
+      cellColumn = row("cell_column").asOptionString,
+      cellFiltering = row("cell_filtering").asOptionString))
 }
 
-case class TablePropertyRelate(tableId: String, propertyId: String, cellColumn: String, cellFiltering: String)
+case class TablePropertyRelate(tableId: String, propertyId: String, cellColumn: Option[String], cellFiltering: Option[String])

@@ -7,7 +7,8 @@ import javax.inject.Inject
 class MetaServiceImpl @Inject() (dao: MetaServiceDao) extends MetaService.MethodPerEndpoint {
 
   def getRandomCache(): Future[String] = {
-    dao.findTest.map(_.flatten.mkString(","))
+    //dao.findTest.map(_.flatten.mkString(","))
+    ???
   }
 
   def getRandomPartition(): Future[Int] = {

@@ -80,22 +80,20 @@ struct PropertyGroup {
 struct Property {
   1:  PROPERTY_ID id
   2:  string label
-  3:  PropertyType property_type 								#字段类型
-  4:  i32 cell_index = 9999										#排序
-  5:  string cell_column											#列名
-  6:  string cell_label											#虚拟列名
-  7:  optional string cell_filtering								#过滤条件
-  8:  optional string cell_value									#指标 配合过滤条件使用
-  9:  optional string aggregation_method 						#汇聚方法
+  3:  PropertyType property_type 								# 字段类型
+  4:  i32 cell_index = 9999										# 排序
+  5:  string cell_column											# 列名
+  6:  string cell_label											# 虚拟列名
+  7:  optional string cell_filtering								# 过滤条件
+  8:  optional string cell_value									# 指标 配合过滤条件使用
+  9:  optional string aggregation_method 						# 汇聚方法
   10: optional string value_display_format
   11: optional string formula_script
-  12: optional list<string> relate_ids							#关联字段
-  13: optional list<PropertyExpression> property_expressions		#字段转换
-  14: optional string table_cell_column							# 所在表对应的where条件
-  15: optional string table_cell_filtering						# 所在表对应的字段
-  16: optional list<string> values								# 维度 where条件 参数
-  17: optional PROPERTY_ID parent_id								# 复合指标有用
-  18: PropertyGroup property_group
+  12: optional list<string> relate_ids							# 关联字段
+  13: optional list<PropertyExpression> property_expressions		# 字段转换
+  14: optional list<string> values								# 维度 where条件 参数
+  15: optional PROPERTY_ID parent_id								# 复合指标有用
+  16: PropertyGroup property_group
 }
 
 struct MasterOrSlave {

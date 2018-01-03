@@ -3,10 +3,13 @@ package com.maogogo.mywork.meta.engine
 import com.maogogo.mywork.thrift._
 import com.twitter.util.Future
 import javax.inject.Inject
+import com.maogogo.mywork.meta.service.MetaServiceDao
 
-class EngineServiceImpl extends EngineService.MethodPerEndpoint {
+class EngineServiceImpl @Inject() (dao: MetaServiceDao) extends EngineService.MethodPerEndpoint {
 
   def engining(req: ReportReq): Future[Seq[QuerySql]] = {
+
+    dao.findTableProperties
 
     //    for {
     //      tableProperty <- data.findTableProperty(req.tableId)
