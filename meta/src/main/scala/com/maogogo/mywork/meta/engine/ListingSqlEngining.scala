@@ -1,9 +1,55 @@
-//package com.maogogo.mywork.meta.engine
-//
-//import com.maogogo.mywork.thrift._
-//import com.maogogo.mywork.thrift.ErrorCode.MetaError
-//
-//class ListingSqlEngining extends SqlEngining {
+package com.maogogo.mywork.meta.engine
+
+import com.google.inject.{ Provides, Singleton }
+import com.maogogo.mywork.thrift._
+
+//@Provides @Singleton
+class ListingSqlEngining(implicit val builder: SqlEngineBuilder) extends SqlEngining {
+
+  def packing: Seq[QuerySql] = {
+
+    val sqlTables = createSqlTable
+
+    val tempTable = sqlTables.zipWithIndex.foldLeft("") { (fragment, sqlTableWithIndex) ⇒
+      val (sqlTable, index) = sqlTableWithIndex
+      val r = fragment match {
+        case x if x.nonEmpty ⇒ s"${x} INNER JOIN"
+        case _ ⇒ ""
+      }
+      s"${r} (${sqlTable.createListingSql}) ${SqlTemplate.asName(index)} ON ${sqlTable.createJoinOn(index)}"
+    }
+
+    val prefix = sqlTables.size match {
+      case 1 ⇒ None
+      case _ ⇒ Option("A")
+    }
+
+    val adapter = sqlTables.flatMap(_.getAggregateAdaper).distinct.filterNot(_.isEmpty).mkString(" AND ")
+
+    val sql = SqlTemplate(tempTable, builder.createListingLabel(prefix), Option(adapter))
+
+    val params = sqlTables.flatMap(_.getListingParams) ++ sqlTables.flatMap(_.getAggregateParams)
+
+    Seq(QuerySql(sql, None, Option(params), builder.groupingProps.size, builder.headers))
+  }
+
+  def createSqlTable: Seq[SqlTable] = {
+    if (builder.groupingProps.size == 0) {
+      //全部grouping
+      val groupingProps = builder.allProps.filterNot(x ⇒ x.propertyType == PropertyType.Selecting || x.propertyType == PropertyType.Combining)
+      Seq(SqlTable(builder.table, groupingProps, builder.filteringProps, None))
+
+    } else {
+      //部分 grouping
+      val commonGrouping = builder.groupingProps.filter(SqlTemplate.filterCommonGrouping)
+      builder.groupingProps.filterNot(SqlTemplate.filterCommonGrouping).groupBy(_.propertyGroup).map {
+        case (group, props) ⇒
+          SqlTable(builder.table, commonGrouping ++ props, builder.filteringProps, Option(group))
+      } toSeq
+    }
+  }
+
+}
 //
 //  def packing(tableProperty: TableProperty, req: RootQueryReq): Seq[QuerySql] = {
 //    val resp = getListSelectingAndFilteringResp(tableProperty, req)

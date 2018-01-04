@@ -27,13 +27,6 @@ class MetaServiceDao @Inject() (implicit builder: ConnectionBuilder) {
 
   def optionStringToSeq(str: Option[String]): Option[Seq[String]] = str.map(_.split(",").map(_.trim).filter(_.nonEmpty))
 
-  //  def findTest: Future[Seq[Seq[String]]] = {
-  //    val sql = "select * from t_oauth_access_tokens"
-  //    SQL {
-  //      _.prepare(sql)().map(resultSet { rowToKends })
-  //    }
-  //  }
-
   def findProperties: Future[Seq[Property]] = {
 
     for {
@@ -115,7 +108,7 @@ class MetaServiceDao @Inject() (implicit builder: ConnectionBuilder) {
       tableEx = row("table_ex").asOptionString,
       selectingFiltering = row("selecting_filtering").asOptionString,
       groupingColumns = optionStringToSeq(row("grouping_columns").asOptionString),
-      havingColumns = optionStringToSeq(row("having_columns").asOptionString),
+      uniqueColumns = optionStringToSeq(row("unique_columns").asOptionString),
       propertyHaving = Option(PropertyHaving(id = row("hfilter_id").asString, label = "",
         hfilterColumn = "", hfilterMethod = "", hfilterSymbol = "", hfilterValue = "")))
 

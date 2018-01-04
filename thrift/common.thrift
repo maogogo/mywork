@@ -72,8 +72,8 @@ struct PropertyHaving {
 struct PropertyGroup {
   1: optional string table_ex
   2: optional string selecting_filtering
-  3: optional list<string> grouping_columns						#分组字段
-  4: optional list<string> having_columns						#过滤分组
+  3: optional list<string> grouping_columns						# 分组字段
+  4: optional list<string> unique_columns						# 去重字段
   5: optional PropertyHaving property_having
 }
 

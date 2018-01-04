@@ -8,8 +8,9 @@ struct ReportReq {
   2: optional list<string> selecting
   3: optional list<common.PropertyBinding> grouping
   4: optional list<common.PropertyBinding> filtering
-  5: optional common.Paging paging
-  6: optional common.MasterOrSlave master_or_slave
+  5: bool is_listing = false
+  6: optional common.Paging paging
+  7: optional common.MasterOrSlave master_or_slave
 }
 
 struct ReportResp {
