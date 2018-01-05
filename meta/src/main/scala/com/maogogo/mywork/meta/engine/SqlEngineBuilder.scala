@@ -32,16 +32,17 @@ class SqlEngineBuilder(req: ReportReq, tabProp: TableProperties) {
   lazy val commonGroupingProps = groupingProps.filter(SqlTemplate.filterCommonGrouping)
 
   lazy val headers = {
-    //    groupingProps.fil
+    val rowSpan = Option(1)
+    val parentSpan = Option(0)
     (commonGroupingProps ++ groupingProps.filterNot(SqlTemplate.filterCommonGrouping)).map { prop ⇒
-      CellHeader(prop.label, prop.parentId.getOrElse(""), None, prop.cellIndex, Option(1), Option(1), Option(0), Option(0))
+      CellHeader(prop.label, prop.parentId.getOrElse(""), None, prop.cellIndex, rowSpan, rowSpan, parentSpan, parentSpan)
     }
   }
 
   def createListingLabel(prefix: Option[String] = None): String = {
     val commonGroupingIds = commonGroupingProps.map(_.id)
     val otherGroupingProps = groupingProps.filterNot(x ⇒ commonGroupingIds.contains(x.id)).map(SqlTemplate.toLabel)
-    (commonGroupingProps.map(SqlTemplate.toLabel(prefix)) ++ otherGroupingProps).mkString(", ")
+    (commonGroupingProps.map(SqlTemplate.toLabel(prefix)(_)) ++ otherGroupingProps).mkString(", ")
   }
 
   def binding2Property: PartialFunction[PropertyBinding, Property] = {

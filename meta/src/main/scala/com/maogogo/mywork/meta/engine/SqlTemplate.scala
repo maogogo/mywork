@@ -68,35 +68,70 @@ trait SqlTemplate {
         (prop.values.nonEmpty && prop.values.getOrElse(Seq.empty).size > 0)
   }
 
+  def toAggregateColumn: PartialFunction[Property, String] = {
+    case prop if prop.propertyType == PropertyType.Selecting ⇒
+      val label = SqlTemplate.toLabel(prop)
+      s"SUM(${label}) AS '${label}'"
+    case prop if prop.propertyType == PropertyType.Grouping ||
+      prop.propertyType == PropertyType.CommonGrouping || prop.propertyType == PropertyType.Filtering ⇒
+      prop.cellLabel
+    case _ ⇒ "0"
+  }
+
+  /**
+   *
+   */
+  //  def toAggregateUniqueColumn: PartialFunction[Property, String] = {
+  //    case prop if prop.propertyType == PropertyType.Selecting ⇒
+  //      val label = SqlTemplate.toLabel(prop)
+  //      s"SUM(${label}) AS '${label}'"
+  //    case prop if prop.propertyType == PropertyType.Grouping ||
+  //      prop.propertyType == PropertyType.CommonGrouping || prop.propertyType == PropertyType.Filtering ⇒
+  //      prop.cellLabel
+  //    case _ ⇒ ""
+  //  }
+
+  def toAggregateListingColumn: PartialFunction[Property, String] = {
+    case prop if prop.propertyType == PropertyType.Selecting ⇒
+      val method = prop.aggregationMethod match {
+        case Some(m) if !m.isEmpty ⇒ m.toUpperCase
+        case _ ⇒ "SUM"
+      }
+      val label = SqlTemplate.toLabel(prop)
+      s"${method}(${label}) AS '${label}'"
+    case prop if prop.propertyType == PropertyType.Grouping ||
+      prop.propertyType == PropertyType.CommonGrouping || prop.propertyType == PropertyType.Filtering ⇒
+      prop.cellLabel
+    case _ ⇒ ""
+  }
+
   /**
    * 主要是清单字段
    */
   def toListingColumn: PartialFunction[Property, String] = {
-    case prop ⇒
+    case prop if prop.propertyType == PropertyType.Selecting ⇒
       val label = toLabel(prop)
-      prop.propertyType match {
-        case PropertyType.Selecting ⇒
-          prop.cellFiltering match {
-            case Some(filtering) if filtering.nonEmpty ⇒
-              val cellValue = prop.cellValue match {
-                case Some(v) if v.nonEmpty ⇒ v
-                case _ ⇒ "1"
-              }
-              s"(CASE WHEN ${filtering} THEN ${cellValue} ELSE 0 END)"
-            case _ ⇒ if (prop.cellColumn == label) label else s"${prop.cellColumn} AS '${label}'"
+      prop.cellFiltering match {
+        case Some(filtering) if filtering.nonEmpty ⇒
+          val cellValue = prop.cellValue match {
+            case Some(v) if v.nonEmpty ⇒ v
+            case _ ⇒ "1"
           }
-        case x if x == PropertyType.Grouping || x == PropertyType.CommonGrouping || x == PropertyType.Filtering ⇒
-          prop.propertyExpressions match {
-            case Some(expressions) if expressions.nonEmpty ⇒
-              val whenEx = expressions.foldLeft("") { (s, e) ⇒
-                s"${s} WHEN ${e.cellExpression} THEN '${e.label}'"
-              }
-              s"(CASE ${whenEx} ELSE '' END) AS '${prop.cellLabel}'"
-            case _ ⇒ if (prop.cellColumn == label) label else s"${prop.cellColumn} AS '${label}'"
-          }
-        case PropertyType.Combining ⇒ ""
-        case _ ⇒ throw new ServiceException(s"can not found PropertyType")
+          s"(CASE WHEN ${filtering} THEN ${cellValue} ELSE 0 END)"
+        case _ ⇒ if (prop.cellColumn == label) label else s"${prop.cellColumn} AS '${label}'"
       }
+    case prop if prop.propertyType == PropertyType.Grouping ||
+      prop.propertyType == PropertyType.CommonGrouping || prop.propertyType == PropertyType.Filtering ⇒
+      val label = toLabel(prop)
+      prop.propertyExpressions match {
+        case Some(expressions) if expressions.nonEmpty ⇒
+          val whenEx = expressions.foldLeft("") { (s, e) ⇒
+            s"${s} WHEN ${e.cellExpression} THEN '${e.label}'"
+          }
+          s"(CASE ${whenEx} ELSE '' END) AS '${prop.cellLabel}'"
+        case _ ⇒ if (prop.cellColumn == label) label else s"${prop.cellColumn} AS '${label}'"
+      }
+    case _ ⇒ ""
   }
 
 }

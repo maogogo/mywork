@@ -3,14 +3,23 @@ package com.maogogo.mywork.meta.engine
 import com.google.inject.{ Provides, Singleton }
 import com.maogogo.mywork.thrift._
 
-//@Provides @Singleton
 class ListingSqlEngining(implicit val builder: SqlEngineBuilder) extends SqlEngining {
 
   def packing: Seq[QuerySql] = {
-
+    // grouping 分组
     val sqlTables = createSqlTable
+    // 创建子查询
+    val tempTable = createTempTable(sqlTables)
+    // 前缀
+    val prefix = if (sqlTables.size == 1) None else Option("A")
+    // 创建SQL
+    val sql = SqlTemplate(tempTable, builder.createListingLabel(prefix), getAdapter(sqlTables))
+    //TODO(Toan) 这里缺少 sort 和 limit
+    Seq(QuerySql(sql, None, getParams(sqlTables), builder.groupingProps.size, builder.headers))
+  }
 
-    val tempTable = sqlTables.zipWithIndex.foldLeft("") { (fragment, sqlTableWithIndex) ⇒
+  def createTempTable(sqlTables: Seq[SqlTable]): String = {
+    sqlTables.zipWithIndex.foldLeft("") { (fragment, sqlTableWithIndex) ⇒
       val (sqlTable, index) = sqlTableWithIndex
       val r = fragment match {
         case x if x.nonEmpty ⇒ s"${x} INNER JOIN"
@@ -18,20 +27,13 @@ class ListingSqlEngining(implicit val builder: SqlEngineBuilder) extends SqlEngi
       }
       s"${r} (${sqlTable.createListingSql}) ${SqlTemplate.asName(index)} ON ${sqlTable.createJoinOn(index)}"
     }
-
-    val prefix = sqlTables.size match {
-      case 1 ⇒ None
-      case _ ⇒ Option("A")
-    }
-
-    val adapter = sqlTables.flatMap(_.getAggregateAdaper).distinct.filterNot(_.isEmpty).mkString(" AND ")
-
-    val sql = SqlTemplate(tempTable, builder.createListingLabel(prefix), Option(adapter))
-
-    val params = sqlTables.flatMap(_.getListingParams) ++ sqlTables.flatMap(_.getAggregateParams)
-
-    Seq(QuerySql(sql, None, Option(params), builder.groupingProps.size, builder.headers))
   }
+
+  def getParams(sqlTables: Seq[SqlTable]): Option[Seq[String]] =
+    Option(sqlTables.flatMap(_.getListingParams) ++ sqlTables.flatMap(_.getAggregateParams))
+
+  def getAdapter(sqlTables: Seq[SqlTable]): Option[String] =
+    Option(sqlTables.flatMap(_.getAggregateAdaper).distinct.filterNot(_.isEmpty).mkString(" AND "))
 
   def createSqlTable: Seq[SqlTable] = {
     if (builder.groupingProps.size == 0) {
@@ -50,56 +52,3 @@ class ListingSqlEngining(implicit val builder: SqlEngineBuilder) extends SqlEngi
   }
 
 }
-//
-//  def packing(tableProperty: TableProperty, req: RootQueryReq): Seq[QuerySql] = {
-//    val resp = getListSelectingAndFilteringResp(tableProperty, req)
-//    Seq(toListingSql(tableProperty, req.paging, resp))
-//  }
-//
-//  def getListSelectingAndFilteringResp(tableProperty: TableProperty, req: RootQueryReq): ListSelectingAndFilteringResp = {
-//    val selecting1 = toListingLabel(tableProperty.properties).mkString(", ")
-//    val selecting2 = toListingLabel(tableProperty.properties.filter(_.propertyType == PropertyType.Selecting)).mkString(", ")
-//
-//    val filtering = toSeqProperty((req.filtering, tableProperty.properties)).map(_.map(toCellFilter))
-//
-//    val filter1 = filtering.map { _.filterNot { _._1.startsWith(QueryPrefix) } }
-//    val filter2 = filtering.map { _.filter { _._1.startsWith(QueryPrefix) } }
-//
-//    val filtering1 = filter1.map(_.map(_._1)) match {
-//      case Some(fs) if fs.size > 0 => fs.mkString("WHERE ", " AND ", "")
-//      case _ => ""
-//    }
-//    val filtering2 = filter2.map(_.map(_._1)) match {
-//      case Some(fs) if fs.size > 0 => fs.mkString("WHERE ", " AND ", "")
-//      case _ => ""
-//    }
-//    val params1 = filter1.map(_.flatMap(_._2).flatten)
-//    val params2 = filter2.map(_.flatMap(_._2).flatten)
-//
-//    val params = Seq(params1, params2).flatten.flatten
-//    val headers = toCellHeader(tableProperty.properties.filter(_.propertyType == PropertyType.Selecting))
-//
-//    ListSelectingAndFilteringResp(selecting1, selecting2, filtering1, filtering2, headers, Some(params))
-//  }
-//
-//  def toListingSql(tableProperty: TableProperty, paging: Option[Paging], resp: ListSelectingAndFilteringResp): QuerySql = {
-//    val params = resp.params
-//    val level1SQL =
-//      sqlTemplate(tableProperty.table.dbTableName, resp.select1, Some(resp.filter1), None)
-//
-//    //第二层过滤项
-//    val level2SQL = sqlTemplate(s"(${level1SQL}) A", resp.select2, Some(resp.filter2), None)
-//
-//    val groupingColumns = tableProperty.properties.size
-//
-//    val limit = paging match {
-//      case Some(page) =>
-//        val _limit = if (page.limit == 0) 20 else page.limit
-//        s"limit ${page.offset / _limit}, 2"
-//      case _ => "limit 1"
-//    }
-//
-//    QuerySql(sql = level2SQL, countSql = Some(s"select count(1) from (${level2SQL}) K"), resp.params, groupingColumns, resp.headers)
-//  }
-//
-//}
