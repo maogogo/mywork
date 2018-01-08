@@ -132,9 +132,7 @@ package object jdbc {
         Option(method(time))
       case RawValue(_, cs, _, bytes) ⇒
         Option(method(new String(bytes, Charset(cs))))
-      case x ⇒
-        println("xx ==>>>" + x)
-        None
+      case _ ⇒ None
     })
 
     def asOptionString = asOptionString[String](x ⇒ x)

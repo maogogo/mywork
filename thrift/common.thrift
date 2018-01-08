@@ -45,10 +45,10 @@ struct PropertyBinding {
 }
 
 enum PropertyType {
-  SELECTING 			= 1
-  GROUPING 			= 2
+  GROUPING 			= 1
+  COMMON_GROUPING 	= 2
   FILTERING			= 3
-  COMMON_GROUPING 	= 4
+  SELECTING 			= 4
   COMBINING 			= 5
   UNKNOWN 			= 9
 }

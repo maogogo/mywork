@@ -34,19 +34,23 @@ trait SqlTemplate {
   }
 
   def toLabel: PartialFunction[Property, String] = {
-    case prop ⇒ toLabel(None)(prop)
+    case prop if prop.propertyType == PropertyType.Selecting ||
+      prop.propertyType == PropertyType.Combining ⇒ toSelectingLabel(prop)
+    case prop if prop.propertyType == PropertyType.Grouping ||
+      prop.propertyType == PropertyType.CommonGrouping ⇒ toGroupingLabel(prop)
+    case _ ⇒ ""
   }
 
-  def toLabel(prefix: Option[String] = None): PartialFunction[Property, String] = {
+  def toGroupingLabel: PartialFunction[Property, String] = {
+    case prop ⇒ if (prop.cellLabel.nonEmpty) prop.cellLabel else prop.cellColumn
+  }
+
+  def toSelectingLabel: PartialFunction[Property, String] = {
     case prop ⇒
-      val label = prop.cellLabel
+      val label = if (prop.cellLabel.nonEmpty) prop.cellLabel else prop.cellColumn
       prop.parentId match {
         case Some(pid) if pid.nonEmpty ⇒ s"${prop.cellLabel}_${pid}"
-        case _ ⇒
-          prefix match {
-            case Some(p) if p.nonEmpty ⇒ s"${p}.${label}"
-            case _ ⇒ label
-          }
+        case _ ⇒ label
       }
   }
 
@@ -68,14 +72,14 @@ trait SqlTemplate {
         (prop.values.nonEmpty && prop.values.getOrElse(Seq.empty).size > 0)
   }
 
-  def toAggregateColumn: PartialFunction[Property, String] = {
+  def toAggregateColumn(prefix: Option[String] = None): PartialFunction[Property, String] = {
     case prop if prop.propertyType == PropertyType.Selecting ⇒
       val label = SqlTemplate.toLabel(prop)
       s"SUM(${label}) AS '${label}'"
-    case prop if prop.propertyType == PropertyType.Grouping ||
-      prop.propertyType == PropertyType.CommonGrouping || prop.propertyType == PropertyType.Filtering ⇒
-      prop.cellLabel
-    case _ ⇒ "0"
+    case prop if prop.propertyType == PropertyType.Grouping ⇒ SqlTemplate.toLabel(prop)
+    case prop if prop.propertyType == PropertyType.CommonGrouping ⇒ s"${prefix.getOrElse("")}${SqlTemplate.toLabel(prop)}"
+    case prop if prop.propertyType == PropertyType.Combining ⇒ s"0 as '${SqlTemplate.toLabel(prop)}'"
+    case _ ⇒ ""
   }
 
   /**
@@ -111,14 +115,18 @@ trait SqlTemplate {
   def toListingColumn: PartialFunction[Property, String] = {
     case prop if prop.propertyType == PropertyType.Selecting ⇒
       val label = toLabel(prop)
+      println("prop ==>> " + prop)
       prop.cellFiltering match {
         case Some(filtering) if filtering.nonEmpty ⇒
+          println("===>>>>>>>>>>123")
           val cellValue = prop.cellValue match {
             case Some(v) if v.nonEmpty ⇒ v
             case _ ⇒ "1"
           }
-          s"(CASE WHEN ${filtering} THEN ${cellValue} ELSE 0 END)"
-        case _ ⇒ if (prop.cellColumn == label) label else s"${prop.cellColumn} AS '${label}'"
+          s"(CASE WHEN ${filtering} THEN ${cellValue} ELSE 0 END) AS '${label}'"
+        case _ ⇒
+          println("===>>>>>>>>>>44444")
+          if (prop.cellColumn == label) label else s"${prop.cellColumn} AS '${label}'"
       }
     case prop if prop.propertyType == PropertyType.Grouping ||
       prop.propertyType == PropertyType.CommonGrouping || prop.propertyType == PropertyType.Filtering ⇒

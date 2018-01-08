@@ -24,28 +24,35 @@ class SqlTable(table: Table, selectings: Seq[Property], groupings: Seq[Property]
   }
 
   def createAggregateListingSql: String = {
-    val tempSql = createListingSql
+    val tempSql = s"(${createListingSql}) A"
+
     if (hasGroupingColumns) {
-      val aggregateSql = SqlTemplate(tempSql, getAggregateListingColumn(), getAggregateAdaper, getAggregateGroup(), getHaving)
+      println("11111111111")
+      val aggregateUniqueSql = s"(${SqlTemplate(tempSql, getAggregateListingColumn(), getAggregateAdaper, getAggregateGroup(), getHaving)}) B"
       hasUniqueColumns match {
-        case true ⇒ SqlTemplate(aggregateSql, getAggregateListingColumn(false), getAggregateAdaper, getAggregateGroup(false), getHaving)
-        case _ ⇒ aggregateSql
+        case true ⇒
+          println("2222222222222")
+          s"(${SqlTemplate(aggregateUniqueSql, getAggregateListingColumn(false), None, getAggregateGroup(false), None)}) C"
+        case _ ⇒
+          println("3333333")
+          aggregateUniqueSql
       }
     } else {
+      println("44444444444")
       tempSql
     }
   }
 
-  def getGroupingColumn: String = {
-    groupings.map(SqlTemplate.toAggregateColumn)
-  }
+  //  def getGroupingColumn: String = {
+  //    groupings.map(SqlTemplate.toAggregateColumn(None))
+  //  }
 
-  def getAggregateColumn: String = {
-    (groupings ++ selectings).map(SqlTemplate.toAggregateColumn)
-  }
+  //  def getAggregateColumn: String = {
+  //    (groupings ++ selectings).map(SqlTemplate.toAggregateColumn(None))
+  //  }
 
-  def getAggregateGroup(isHaving: Boolean = true): Option[String] = {
-    Option((groupings.map(SqlTemplate.toAggregateListingColumn) ++ getOtherColumns(isHaving)))
+  def getAggregateGroup(isUnique: Boolean = true): Option[String] = {
+    Option((groupings.map(SqlTemplate.toAggregateListingColumn) ++ getOtherColumns(isUnique)))
   }
 
   def getHaving: Option[String] = {
@@ -58,30 +65,32 @@ class SqlTable(table: Table, selectings: Seq[Property], groupings: Seq[Property]
    * 清单的时候需要考虑 join
    */
   def createJoinOn(index: Int): String = {
-    groupings.filter(SqlTemplate.filterCommonGrouping).map {
-      case prop ⇒
-        s"${SqlTemplate.asName(index)}.${prop.cellLabel}=${SqlTemplate.asName(index + 1)}.${prop.cellLabel}"
+    val commonProps = groupings.filter(SqlTemplate.filterCommonGrouping)
+    if (commonProps.size == 0) throw new ServiceException(s"can not found common grouping")
+    commonProps.map { prop ⇒
+      s"${SqlTemplate.asName(index - 1)}.${prop.cellLabel}=${SqlTemplate.asName(index)}.${prop.cellLabel}"
     } mkString (" AND ")
   }
 
   /**
    * 聚合清单字段
    */
-  def getAggregateListingColumn(isHaving: Boolean = true): String = {
-    (groupings ++ selectings).map(SqlTemplate.toAggregateListingColumn) ++ getOtherColumns(isHaving)
+  def getAggregateListingColumn(isUnique: Boolean = true): String = {
+    (groupings ++ selectings).map(SqlTemplate.toAggregateListingColumn) ++ getOtherColumns(isUnique)
   }
 
   /**
    * 最底层的清单字段
    */
-  def getListingColumn: String =
-    (groupings ++ selectings ++ filterings).map(SqlTemplate.toListingColumn) ++ getOtherColumns()
+  def getListingColumn: String = {
+    (groupings ++ selectings ++ filterings).map(SqlTemplate.toListingColumn) ++ getOtherColumns() ++
+      Seq(group.flatMap(_.propertyHaving.map(_.hfilterColumn)).getOrElse(""))
+  }
 
-  def getOtherColumns(isHaving: Boolean = true): Seq[String] = {
+  def getOtherColumns(isUnique: Boolean = true): Seq[String] = {
     group.map { g ⇒
       g.groupingColumns.getOrElse(Seq.empty) ++
-        g.uniqueColumns.getOrElse(Seq.empty) ++
-        (if (isHaving) Seq(g.propertyHaving.map(_.hfilterColumn).getOrElse("")) else Seq.empty)
+        (if (isUnique) g.uniqueColumns.getOrElse(Seq.empty) else Seq.empty)
     } getOrElse (Seq.empty)
   }
 

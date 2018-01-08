@@ -5,6 +5,8 @@ import com.maogogo.mywork.backend.modules.ServicesModule
 import com.twitter.finagle.Http
 import com.twitter.util.StorageUnit
 import io.finch._
+import com.maogogo.mywork.backend.filters.ExceptionFilter
+import com.twitter.finagle.http.Response
 
 object Main extends MainServer {
 
@@ -16,7 +18,10 @@ object Main extends MainServer {
 
     val endpoints = servicesModule.endpoints(injector).toService
 
-    val server = Http.server.withMaxRequestSize(StorageUnit.fromMegabytes(100)).serve(s":${config.getInt("http.port")}", endpoints)
+    val filters = new ExceptionFilter
+
+    val server = Http.server.withMaxRequestSize(StorageUnit.fromMegabytes(100))
+      .serve(s":${config.getInt("http.port")}", filters andThen endpoints)
 
     onExit {
       server.close()

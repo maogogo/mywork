@@ -10,16 +10,26 @@ import com.twitter.finagle.Service
 import com.twitter.finagle.http.Request
 import com.twitter.finagle.http.Response
 import com.twitter.util.Future
-import com.maogogo.mywork.thrift.RootService
+import com.maogogo.mywork.thrift._
+import io.finch.Output
+import com.twitter.finagle.http.Status
 
 class ServicesModule(implicit val config: Config) extends HttpMainModule {
 
   def injectModule: Unit = {
-    bindSingleton[RootService.MethodPerEndpoint].toInstance(zookClient[RootService.MethodPerEndpoint]("root"))
+    //bindSingleton[RootService.MethodPerEndpoint].toInstance(zookClient[RootService.MethodPerEndpoint]("root"))
+    bindSingleton[EngineService.MethodPerEndpoint].toInstance(zookClient[EngineService.MethodPerEndpoint]("engine"))
+
   }
 
   def endpoints(injector: Injector) = {
-    injector.instance[HelloEndpoints].endpoints
+    (injector.instance[HelloEndpoints].endpoints).handle {
+      case ex: Exception ⇒
+        //Ok("123")
+        println("eeee==>>>" + ex)
+        io.finch.Output.failure(ex, Status(500))
+      //throw new ServiceException("sssssssssssssss")
+    }
   }
 
 }

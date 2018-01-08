@@ -19,8 +19,20 @@ package object backend {
   implicit def decode[A: Manifest]: Decode.Json[A] =
     Decode.instance[A, Application.Json]((buf, cs) ⇒ Try(parse(buf.asString(cs), false).extract[A]))
   //
-  implicit def encodeJson[A <: AnyRef]: Encode.Json[A] =
-    Encode.instance[A, Application.Json]((a, _) ⇒ { Buf.Utf8(a) })
+  implicit def encodeJson[A <: AnyRef]: Encode.Json[A] = {
+    //  ToResponse.Aux[A, Application.Json] = {
+    //    ToResponse.instance[A, Application.Json] { (a, cs) ⇒
+    //      val resp = Response(Status.Ok)
+    //      resp.contentType = "application/json"
+    //      resp.content = Buf.Utf8(a)
+    //      //resp.content
+    //      resp
+    //    }
+    Encode.instance[A, Application.Json]((a, _) ⇒ {
+      println("aaa ==>>" + a)
+      Buf.Utf8(a)
+    })
+  }
 
   //
   private[this] implicit def writeJson[A <: AnyRef](a: A): String = {
@@ -35,6 +47,8 @@ package object backend {
         e.printStackTrace
         wrappedError(error = e.getMessage)
       case x ⇒
+
+        println("xx===ee ==>>" + x)
         val cleaned = Extraction.decompose(x).removeField {
           case JField("_passthroughFields", _) ⇒ true
           case _ ⇒ false

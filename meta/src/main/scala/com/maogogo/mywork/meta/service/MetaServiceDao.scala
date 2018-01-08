@@ -31,7 +31,7 @@ class MetaServiceDao @Inject() (implicit builder: ConnectionBuilder) {
 
     for {
       properties ← SQL {
-        _.prepare("")().map(resultSet { rowToProperty })
+        _.prepare(s"select * from ${DB.TProperty}")().map(resultSet { rowToProperty })
       }
       expressions ← SQL {
         _.prepare(s"select * from ${DB.TPropertyExpression}")().map(resultSet { rowToExpression })
@@ -84,7 +84,10 @@ class MetaServiceDao @Inject() (implicit builder: ConnectionBuilder) {
               case _ ⇒ propertyOption.get.cellColumn
             }
 
-            val cellFiltering = if (relate.cellFiltering.nonEmpty) relate.cellFiltering else propertyOption.get.cellFiltering
+            val cellFiltering = relate.cellFiltering match {
+              case Some(f) if f.nonEmpty ⇒ Option(f)
+              case _ ⇒ propertyOption.get.cellFiltering
+            }
             //这里植入特有的配置(这块可以没有)
             propertyOption.get.copy(cellColumn = cellColumn, cellFiltering = cellFiltering)
           }
