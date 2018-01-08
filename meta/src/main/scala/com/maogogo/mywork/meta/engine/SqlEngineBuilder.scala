@@ -11,39 +11,40 @@ class SqlEngineBuilder(req: ReportReq, tabProp: TableProperties) {
 
   private[this] val groupingProps = req.grouping.getOrElse(Seq.empty).map(binding2Property)
   //指标
-  lazy val selectingProps = req.selecting.getOrElse(Seq.empty).map(PropertyBinding(_)).map(binding2Property)
+  private[this] val selectingProps = req.selecting.getOrElse(Seq.empty).map(PropertyBinding(_)).map(binding2Property)
   //条件
   lazy val filteringProps = req.filtering.getOrElse(Seq.empty).map(binding2Property)
   //符合
-  //  lazy val combiningProps = selectingProps.filter(_.propertyType == PropertyType.Combining).map {
-  //    prop ⇒
-  //      prop.relateIds match {
-  //        case Some(relateIds) if relateIds.nonEmpty ⇒
-  //          Log.info(s"Property[${prop.id}] has relate ids ${relateIds}")
-  //          relateIds.map((_, Option(prop.id))).map(findProperty)
-  //        case _ ⇒
-  //          Log.error(s"can not found relate ids for property[${prop.id}]")
-  //          throw new ServiceException(s"can not found relate ids for property[${prop.id}]")
-  //      }
-  //  }
+  lazy val combiningProps = selectingProps.filter(_.isSpecial).flatMap {
+    prop ⇒
+      prop.relateIds match {
+        case Some(relateIds) if relateIds.nonEmpty ⇒
+          Log.info(s"Property[${prop.id}] has relate ids ${relateIds}")
+          relateIds.map((_, Option(prop.id))).map(findProperty)
+        case _ ⇒
+          Log.error(s"can not found relate ids for property[${prop.id}]")
+          throw new ServiceException(s"can not found relate ids for property[${prop.id}]")
+      }
+  }
 
-  //lazy val commonGroupingProps = groupingProps.filter(SqlTemplate.filterCommonGrouping)
+  //所有的指标(已经对复合指标做了处理)
+  lazy val allSelectings = selectingProps.filterNot(_.isSpecial) ++ combiningProps
 
   lazy val isListing: Boolean = (req.isListing || req.selecting.isEmpty)
-  private[this] val allProperties: Seq[Property] = getAllGroupings ++ selectingProps
 
-  lazy val headers = allProperties.map(toCellHeader)
+  //这里是全的property
+  private[this] val allProperties: Seq[Property] = getAllGroupings ++ selectingProps ++ combiningProps
+
+  lazy val headers = (getAllGroupings ++ selectingProps).map(toCellHeader)
 
   private[this] def toCellHeader: PartialFunction[Property, CellHeader] = {
     case prop ⇒
-      val rowSpan = Option(1)
-      val parentSpan = Option(0)
-      CellHeader(prop.label, prop.parentId.getOrElse(""), None, prop.cellIndex, rowSpan, rowSpan, parentSpan, parentSpan)
+      CellHeader(prop.label, prop.cellLabel, prop.cellIndex)
   }
 
   def getAllGroupings: Seq[Property] = {
-    groupingProps.size match {
-      case 0 ⇒ tabProp.properties.filter(p ⇒ p.propertyType == PropertyType.Grouping || p.propertyType == PropertyType.CommonGrouping)
+    (groupingProps.size == 0 && selectingProps.size == 0) match {
+      case true ⇒ tabProp.properties.filter(_.propertyType == PropertyType.Grouping)
       case _ ⇒ groupingProps
     }
   }
@@ -53,20 +54,19 @@ class SqlEngineBuilder(req: ReportReq, tabProp: TableProperties) {
   }
 
   def createAggregateLabel(group: PropertyGroup): String = {
-    (allProperties.map { prop ⇒
+    (allProperties.distinct.map { prop ⇒
       prop.propertyType match {
-        case PropertyType.Grouping | PropertyType.CommonGrouping ⇒
-          SqlTemplate.toAggregateColumn(None)(prop)
-        case PropertyType.Selecting | PropertyType.Combining ⇒
+        case PropertyType.Grouping ⇒ SqlTemplate.toAggregateColumn(None)(prop)
+        case PropertyType.Selecting ⇒
           if (prop.propertyGroup == group) SqlTemplate.toAggregateColumn(None)(prop) else "0"
         case _ ⇒ ""
       }
-    }).distinct.filterNot(_.isEmpty).mkString(", ")
+    }).filterNot(_.isEmpty).mkString(", ")
 
   }
 
   def getGroupingColumn: String = {
-    groupingProps.map(_.cellLabel).distinct.filterNot(_.isEmpty).mkString(", ")
+    groupingProps.distinct.map(_.cellLabel).filterNot(_.isEmpty).mkString(", ")
   }
 
   private[this] def binding2Property: PartialFunction[PropertyBinding, Property] = {

@@ -12,10 +12,10 @@ class HelloEndpoints @Inject() (client: EngineService.MethodPerEndpoint) {
 
   val hello: Endpoint[String] = get("hello") {
 
-    val selectings = Seq("s1", "s2")
-    val groupings = PropertyBinding("g1", Option(Seq("11", "22"))) +: Seq("g4", "g5").map(PropertyBinding(_))
+    val selectings = Seq("s31") //, "s2", "s3")
+    val groupings = Seq(PropertyBinding("g1", Option(Seq("11", "22")))) //+: Seq("g4", "g5").map(PropertyBinding(_))
 
-    val req = ReportReq("table_1", Option(selectings), Option(groupings), None, false, None, None)
+    val req = ReportReq("table_2", Option(selectings), Option(groupings), None, false, None, None)
 
     client.toQuerySql(req).map { x ⇒
       println(s"x ==>> \n ${x}")

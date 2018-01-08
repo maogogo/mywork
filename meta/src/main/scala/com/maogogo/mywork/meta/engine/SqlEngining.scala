@@ -23,39 +23,31 @@ class SqlTable(table: Table, selectings: Seq[Property], groupings: Seq[Property]
     SqlTemplate(tableName, getListingColumn, getListingAdapter)
   }
 
+  /**
+   * 带有聚合函数的listing
+   */
   def createAggregateListingSql: String = {
     val tempSql = s"(${createListingSql}) A"
-
-    if (hasGroupingColumns) {
-      println("11111111111")
-      val aggregateUniqueSql = s"(${SqlTemplate(tempSql, getAggregateListingColumn(), getAggregateAdaper, getAggregateGroup(), getHaving)}) B"
-      hasUniqueColumns match {
-        case true ⇒
-          println("2222222222222")
-          s"(${SqlTemplate(aggregateUniqueSql, getAggregateListingColumn(false), None, getAggregateGroup(false), None)}) C"
-        case _ ⇒
-          println("3333333")
-          aggregateUniqueSql
-      }
-    } else {
-      println("44444444444")
-      tempSql
+    //需要分组处理
+    hasGroupingColumns match {
+      case true ⇒
+        val aggregateUniqueSql = s"(${SqlTemplate(tempSql, getAggregateListingColumn(), getAggregateAdaper, getAggregateGroup(), getHaving)}) B"
+        hasUniqueColumns match {
+          case true ⇒
+            //需要去重处理
+            s"(${SqlTemplate(aggregateUniqueSql, getAggregateListingColumn(false), None, getAggregateGroup(false), None)}) C"
+          case _ ⇒ aggregateUniqueSql
+        }
+      case _ ⇒ tempSql
     }
+
   }
 
-  //  def getGroupingColumn: String = {
-  //    groupings.map(SqlTemplate.toAggregateColumn(None))
-  //  }
-
-  //  def getAggregateColumn: String = {
-  //    (groupings ++ selectings).map(SqlTemplate.toAggregateColumn(None))
-  //  }
-
-  def getAggregateGroup(isUnique: Boolean = true): Option[String] = {
+  private[this] def getAggregateGroup(isUnique: Boolean = true): Option[String] = {
     Option((groupings.map(SqlTemplate.toAggregateListingColumn) ++ getOtherColumns(isUnique)))
   }
 
-  def getHaving: Option[String] = {
+  private[this] def getHaving: Option[String] = {
     group.flatMap(_.propertyHaving.map { h ⇒
       s"${h.hfilterMethod.toUpperCase}(${h.hfilterColumn}) ${h.hfilterSymbol} ${h.hfilterValue}"
     })
@@ -75,19 +67,25 @@ class SqlTable(table: Table, selectings: Seq[Property], groupings: Seq[Property]
   /**
    * 聚合清单字段
    */
-  def getAggregateListingColumn(isUnique: Boolean = true): String = {
+  private[this] def getAggregateListingColumn(isUnique: Boolean = true): String = {
     (groupings ++ selectings).map(SqlTemplate.toAggregateListingColumn) ++ getOtherColumns(isUnique)
   }
 
   /**
-   * 最底层的清单字段
+   * 最底层的清单字段(这里必须去重)
    */
-  def getListingColumn: String = {
+  private[this] def getListingColumn: String = {
+    //维度 + 指标 + 过滤条件
     (groupings ++ selectings ++ filterings).map(SqlTemplate.toListingColumn) ++ getOtherColumns() ++
-      Seq(group.flatMap(_.propertyHaving.map(_.hfilterColumn)).getOrElse(""))
+      Seq(group.flatMap(_.propertyHaving.map(_.hfilterColumn)).getOrElse("")).distinct
   }
 
-  def getOtherColumns(isUnique: Boolean = true): Seq[String] = {
+  /**
+   * 加入额外的字段
+   * 第一层:grouping_columns + unique_columns
+   * 第二层:grouping_columns
+   */
+  private[this] def getOtherColumns(isUnique: Boolean = true): Seq[String] = {
     group.map { g ⇒
       g.groupingColumns.getOrElse(Seq.empty) ++
         (if (isUnique) g.uniqueColumns.getOrElse(Seq.empty) else Seq.empty)
@@ -101,18 +99,22 @@ class SqlTable(table: Table, selectings: Seq[Property], groupings: Seq[Property]
     allFilters.filter(SqlTemplate.filterAggregateAdaper).map(_.values).flatten.flatten
 
   def getListingAdapter: Option[String] = {
-    Option(allFilters.filter(SqlTemplate.filterListingAdaper).map(_.cellFiltering.getOrElse("")).distinct.filterNot(_.isEmpty).mkString(" AND "))
+    Option(toAdapter(allFilters.filter(SqlTemplate.filterListingAdaper).map(_.cellFiltering.getOrElse(""))))
   }
 
   def getAggregateAdaper: Option[String] = {
-    Option(allFilters.filter(SqlTemplate.filterAggregateAdaper).map(_.cellFiltering.getOrElse("")).distinct.filterNot(_.isEmpty).mkString(" AND "))
+    Option(toAdapter(allFilters.filter(SqlTemplate.filterAggregateAdaper).map(_.cellFiltering.getOrElse(""))))
+  }
+
+  def toAdapter: PartialFunction[Seq[String], String] = {
+    case adapters ⇒ adapters.distinct.filterNot(_.isEmpty).mkString(" AND ")
   }
 
   def hasGroupingColumns: Boolean =
-    group.map(g ⇒ g.groupingColumns.nonEmpty && g.groupingColumns.getOrElse(Seq.empty).size > 0).getOrElse(false)
+    group.map(g ⇒ SqlTemplate.optionSeqIsEmpty(g.groupingColumns)).getOrElse(false)
 
   def hasUniqueColumns: Boolean =
-    group.map(g ⇒ g.uniqueColumns.nonEmpty && g.uniqueColumns.getOrElse(Seq.empty).size > 0).getOrElse(false)
+    group.map(g ⇒ SqlTemplate.optionSeqIsEmpty(g.uniqueColumns)).getOrElse(false)
 
 }
 

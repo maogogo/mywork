@@ -89,7 +89,7 @@ package object jdbc {
       case LongValue(v) ⇒ Option(method(v == 1))
       case IntValue(v) ⇒ Option(method(v == 1))
       case StringValue(v) ⇒ Option(method(v == "1"))
-      case RawValue(_type, _, true, bytes) ⇒ Option(method(new String(bytes) == 1))
+      case RawValue(_type, _, true, bytes) ⇒ Option(method(new String(bytes) == "1"))
     })
 
     def asOptionBool = asOptionBool[Boolean](x ⇒ x)

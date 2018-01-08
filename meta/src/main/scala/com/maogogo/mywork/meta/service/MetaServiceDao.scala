@@ -105,7 +105,11 @@ class MetaServiceDao @Inject() (implicit builder: ConnectionBuilder) {
       isListing = row("is_listing").asOptionBool.getOrElse(false)))
 
   def rowToProperty(row: Row): Option[Property] = {
-    val cellType = row("cell_type").asOptionInt.getOrElse(9)
+    val cellType = row("cell_type").asInt match {
+      case 1 ⇒ PropertyType.Grouping
+      case 2 ⇒ PropertyType.Selecting
+      case _ ⇒ PropertyType.Unknown
+    }
 
     val propGroup = PropertyGroup(
       tableEx = row("table_ex").asOptionString,
@@ -118,7 +122,8 @@ class MetaServiceDao @Inject() (implicit builder: ConnectionBuilder) {
     Option(Property(
       id = row("id").asString,
       label = row("label").asString,
-      propertyType = PropertyType(cellType),
+      propertyType = cellType,
+      isSpecial = row("is_special").asBool,
       cellIndex = row("cell_index").asOptionInt.getOrElse(9999),
       cellColumn = row("cell_column").asString,
       cellLabel = row("cell_label").asString,

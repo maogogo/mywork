@@ -6,9 +6,10 @@ import com.maogogo.mywork.thrift._
 class ComplexSqlEngining(implicit val builder: SqlEngineBuilder) extends SqlEngining {
 
   def packing: Seq[QuerySql] = {
-    val resp = builder.selectingProps.groupBy(_.propertyGroup).map {
-      case (group, props) ⇒
-        val sqlTable = SqlTable(builder.table, props, builder.getAllGroupings, builder.filteringProps, Option(group))
+    //对指标分组处理(如果指标分组size==0是有问题的)
+    val resp = (builder.allSelectings).groupBy(_.propertyGroup).map {
+      case (group, selectings) ⇒
+        val sqlTable = SqlTable(builder.table, selectings, builder.getAllGroupings, builder.filteringProps, Option(group))
         // 子查询
         val listingTable = sqlTable.createAggregateListingSql
         //这里的最后一层要从全部的id 里面获取信息(builder)
