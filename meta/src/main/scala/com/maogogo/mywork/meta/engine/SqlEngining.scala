@@ -92,6 +92,8 @@ class SqlTable(table: Table, selectings: Seq[Property], groupings: Seq[Property]
     } getOrElse (Seq.empty)
   }
 
+  def getAllParams: Option[Seq[String]] = Option(getListingParams ++ getAggregateParams)
+
   def getListingParams: Seq[String] =
     allFilters.filter(SqlTemplate.filterListingAdaper).map(_.values).flatten.flatten
 

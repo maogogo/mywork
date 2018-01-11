@@ -6,34 +6,6 @@ trait SqlTemplate {
 
   def asName(level: Int) = (65 + level).toChar
 
-  def apply(tabName: String, listing: String, filtering: Option[String]): String = {
-    this(tabName, listing, filtering, None, None)
-  }
-
-  def apply(tabName: String, listing: String, filtering: Option[String] = None,
-    grouping: Option[String] = None, having: Option[String] = None): String = {
-
-    val _filtering = filtering match {
-      case Some(f) if !f.isEmpty ⇒ s"WHERE ${f}"
-      case _ ⇒ ""
-    }
-    val _grouping = grouping match {
-      case Some(g) if !g.isEmpty ⇒ s"GROUP BY ${g}"
-      case _ ⇒ ""
-    }
-    val _having = having match {
-      case Some(h) if !h.isEmpty ⇒ s"HAVING ${h}"
-      case _ ⇒ ""
-    }
-
-    s"""
-  SELECT ${listing} 
-  FROM ${tabName} 
-  ${_filtering}
-  ${_grouping} ${_having}
-""".stripMargin.trim
-  }
-
   def optionSeqIsEmpty: PartialFunction[Option[Seq[String]], Boolean] = {
     case x ⇒ x.nonEmpty && x.map(_.filter(_.isEmpty)).getOrElse(Seq.empty).size > 0
   }
@@ -146,4 +118,32 @@ trait SqlTemplate {
 
 }
 
-object SqlTemplate extends SqlTemplate
+object SqlTemplate extends SqlTemplate {
+  def apply(tabName: String, listing: String, filtering: Option[String]): String = {
+    this(tabName, listing, filtering, None, None)
+  }
+
+  def apply(tabName: String, listing: String, filtering: Option[String] = None,
+    grouping: Option[String] = None, having: Option[String] = None): String = {
+
+    val _filtering = filtering match {
+      case Some(f) if !f.isEmpty ⇒ s"WHERE ${f}"
+      case _ ⇒ ""
+    }
+    val _grouping = grouping match {
+      case Some(g) if !g.isEmpty ⇒ s"GROUP BY ${g}"
+      case _ ⇒ ""
+    }
+    val _having = having match {
+      case Some(h) if !h.isEmpty ⇒ s"HAVING ${h}"
+      case _ ⇒ ""
+    }
+
+    s"""
+  SELECT ${listing} 
+  FROM ${tabName} 
+  ${_filtering}
+  ${_grouping} ${_having}
+""".stripMargin.trim
+  }
+}

@@ -24,7 +24,7 @@ object Dependencies {
 
     val finch = "0.15.1"
 
-    val thrift = "0.9.3"
+    val thrift = "0.9.0"
     val scrooge = "17.12.0"
 
     val solr = "0.0.16"

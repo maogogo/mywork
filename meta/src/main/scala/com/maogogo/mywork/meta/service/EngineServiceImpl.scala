@@ -5,6 +5,7 @@ import javax.inject.Inject
 import com.twitter.util.Future
 import com.maogogo.mywork.meta.engine._
 import org.slf4j.LoggerFactory
+import com.twitter.scrooge.BinaryThriftStructSerializer
 
 class EngineServiceImpl @Inject() (dao: MetaServiceDao) extends EngineService.MethodPerEndpoint {
 
@@ -28,7 +29,18 @@ class EngineServiceImpl @Inject() (dao: MetaServiceDao) extends EngineService.Me
         case _ ⇒ new ComplexSqlEngining //报表查询
       }
 
-      sqlEngine.packing
+      val d = sqlEngine.packing
+
+      val e = d.map { x ⇒
+        BinaryThriftStructSerializer(QuerySql).toBytes(x)
+      }
+
+      e.foreach { b ⇒
+        println(BinaryThriftStructSerializer(QuerySql).fromBytes(b))
+
+      }
+
+      d
     }
 
     resp handle {

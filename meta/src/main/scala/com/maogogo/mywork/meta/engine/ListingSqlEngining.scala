@@ -75,5 +75,4 @@ class ListingSqlEngining(implicit val builder: SqlEngineBuilder) extends SqlEngi
       case _ ⇒ propGroups
     }
   }
-
 }

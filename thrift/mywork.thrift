@@ -11,6 +11,7 @@ struct ReportReq {
   5: bool is_listing = false
   6: optional common.Paging paging
   7: optional common.MasterOrSlave master_or_slave
+  8: bool aggregate_summary_row = false
 }
 
 struct ReportResp {

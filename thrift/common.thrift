@@ -30,8 +30,11 @@ struct Row {
 
 struct CellHeader {
   1: string label
-  2: string cell_label
-  3: i32 cell_index
+  2: PROPERTY_ID property_id
+  3: string cell_label
+  4: optional string value_display_format
+  5: optional string formula_script
+  6: optional list<i32> offset
 }
 
 struct PropertyBinding {
@@ -79,7 +82,7 @@ struct Property {
   7:  string cell_label											# 虚拟列名
   8:  optional string cell_filtering								# 过滤条件
   9:  optional string cell_value									# 指标 配合过滤条件使用
-  10:  optional string aggregation_method 						# 汇聚方法
+  10: optional string aggregation_method 						# 汇聚方法
   11: optional string value_display_format
   12: optional string formula_script
   13: optional list<string> relate_ids							# 关联字段

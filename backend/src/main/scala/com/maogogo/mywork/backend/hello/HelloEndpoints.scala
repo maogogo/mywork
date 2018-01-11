@@ -18,6 +18,7 @@ class HelloEndpoints @Inject() (client: EngineService.MethodPerEndpoint) {
     val req = ReportReq("table_2", Option(selectings), Option(groupings), None, false, None, None)
 
     client.toQuerySql(req).map { x ⇒
+      printHeader(x.headOption.map(_.headers))
       println(s"x ==>> \n ${x}")
       Ok(x.size.toString())
     }
@@ -31,6 +32,16 @@ class HelloEndpoints @Inject() (client: EngineService.MethodPerEndpoint) {
 
     //client.hi("Toan").map(Ok)
     //    Ok("hello")
+  }
+
+  def printHeader(headerOption: Option[Seq[CellHeader]]) = {
+    headerOption match {
+      case Some(headers) ⇒
+        headers.foreach { header ⇒
+          print(header.label + s"(${header.formulaScript.getOrElse("")})|\t")
+        }
+      case _ ⇒ println("no headers")
+    }
   }
 
 }

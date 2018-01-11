@@ -35,11 +35,30 @@ class SqlEngineBuilder(req: ReportReq, tabProp: TableProperties) {
   //这里是全的property
   private[this] val allProperties: Seq[Property] = getAllGroupings ++ selectingProps ++ combiningProps
 
-  lazy val headers = (getAllGroupings ++ selectingProps).map(toCellHeader)
+  lazy val headers = {
+    val offsetMap = getSpecialSelectingOffet
+    (getAllGroupings ++ selectingProps).map(toCellHeader).map { header ⇒
+      val offset = offsetMap.find(_._1 == header.propertyId)
+      header.copy(offset = offset.map(_._2))
+    }
+  }
+
+  def getSpecialSelectingOffet: Map[String, Seq[Int]] = {
+    val specialProps = selectingProps.filter(_.isSpecial)
+    val start = (groupingProps.size + selectingProps.size)
+    specialProps.zipWithIndex.map { propWithIndex ⇒
+      val (prop, index) = propWithIndex
+      val limit = prop.relateIds.map(_.size).getOrElse(0)
+      val offset = specialProps.take(index).foldLeft(start) { (x, _prop) ⇒
+        x + _prop.relateIds.map(_.size).getOrElse(0)
+      }
+      (prop.id -> Seq(offset, limit))
+    } toMap
+  }
 
   private[this] def toCellHeader: PartialFunction[Property, CellHeader] = {
     case prop ⇒
-      CellHeader(prop.label, prop.cellLabel, prop.cellIndex)
+      CellHeader(prop.label, prop.id, prop.cellLabel, prop.valueDisplayFormat, prop.formulaScript, None)
   }
 
   def getAllGroupings: Seq[Property] = {

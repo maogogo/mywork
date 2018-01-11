@@ -34,8 +34,7 @@ lazy val merger = module("merger")
 
 lazy val leaf = module("leaf")
   .dependsOn(common % "test->test;compile->compile")
-  .settings(libraryDependencies ++= mtest(testDependency: _*) 
-  )
+  .settings(libraryDependencies ++= mtest(testDependency: _*))
 
 lazy val meta = module("meta")
   .dependsOn(common % "test->test;compile->compile")

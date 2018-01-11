@@ -19,7 +19,6 @@ class ServicesModule(implicit val config: Config) extends HttpMainModule {
   def injectModule: Unit = {
     //bindSingleton[RootService.MethodPerEndpoint].toInstance(zookClient[RootService.MethodPerEndpoint]("root"))
     bindSingleton[EngineService.MethodPerEndpoint].toInstance(zookClient[EngineService.MethodPerEndpoint]("engine"))
-
   }
 
   def endpoints(injector: Injector) = {
