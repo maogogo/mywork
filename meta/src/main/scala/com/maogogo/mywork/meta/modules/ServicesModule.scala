@@ -1,23 +1,21 @@
 package com.maogogo.mywork.meta.modules
 
 import com.maogogo.mywork.common.inject.MainModule
+import com.maogogo.mywork.common.jdbc.ConnectionBuilder
 import com.maogogo.mywork.meta.service._
 import com.maogogo.mywork.thrift._
 import com.typesafe.config.Config
-import com.maogogo.mywork.common.jdbc.ConnectionBuilder
-import javax.inject.Inject
-import com.github.racc.tscg.TypesafeConfig
-import com.google.inject.{ Provides, Singleton }
-import javax.inject.Named
-import com.maogogo.mywork.common.modules.DataSourceModule
+import com.maogogo.mywork.common.modules.MySqlDataSourceModule
 
-class ServicesModule(implicit val config: Config) extends MainModule { //with DataSourceModule {
+class ServicesModule(implicit val config: Config) extends MainModule {
 
   override def injectModule: Unit = {
-    bindSingleton[ConnectionBuilder]
+
+    install(new MySqlDataSourceModule)
 
     bindSingleton[EngineService.MethodPerEndpoint].to[EngineServiceImpl]
     bindSingleton[MetaService.MethodPerEndpoint].to[MetaServiceImpl]
+
   }
 
   override def provideServices(injector: com.twitter.inject.Injector) = Map(

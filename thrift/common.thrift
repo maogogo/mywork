@@ -18,10 +18,17 @@ exception ServiceException {
   2: optional ErrorCode code
 }
 
+union ThriftAnyVal {
+  1: i32 int_val
+  2: i64 long_val
+  3: string string_val
+  4: bool bool_val
+  6: double double_val
+}
+
 struct Cell {
-  1: string cell_label
-  2: string cell_value
-  3: optional string cell_type
+  1: ThriftAnyVal cell_value
+  2: string cell_label
 }
 
 struct Row {
@@ -124,10 +131,16 @@ struct TableProperties {
   2: list<Property> properties
 }
 
-struct QuerySql {
+struct QueryReq {
   1: string sql
   2: optional string count_sql
   3: optional list<string> params
   4: i32 grouping_columns
   5: list<CellHeader> headers
+  6: i32 data_skips = 0
+}
+
+struct QueryResp {
+  1: list<Row> rows
+  2: map<SHARD_ID, ServiceWatcher> watchers
 }

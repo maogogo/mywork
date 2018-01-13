@@ -6,12 +6,13 @@ import com.twitter.util.Future
 import com.maogogo.mywork.meta.engine._
 import org.slf4j.LoggerFactory
 import com.twitter.scrooge.BinaryThriftStructSerializer
+import com.github.racc.tscg.TypesafeConfig
 
-class EngineServiceImpl @Inject() (dao: MetaServiceDao) extends EngineService.MethodPerEndpoint {
+class EngineServiceImpl @Inject() (dao: MetaServiceDao, @TypesafeConfig("is_prepared") isPrepared: Boolean) extends EngineService.MethodPerEndpoint {
 
   lazy val Log = LoggerFactory.getLogger(getClass)
 
-  def toQuerySql(req: ReportReq): Future[Seq[QuerySql]] = {
+  def toQueryReqSeq(req: ReportReq): Future[Seq[QueryReq]] = {
     Log.info(s"SqlEngining Report Request : ${req}")
 
     val resp = for {
@@ -28,19 +29,7 @@ class EngineServiceImpl @Inject() (dao: MetaServiceDao) extends EngineService.Me
         case true ⇒ new ListingSqlEngining //清单查询
         case _ ⇒ new ComplexSqlEngining //报表查询
       }
-
-      val d = sqlEngine.packing
-
-      val e = d.map { x ⇒
-        BinaryThriftStructSerializer(QuerySql).toBytes(x)
-      }
-
-      e.foreach { b ⇒
-        println(BinaryThriftStructSerializer(QuerySql).fromBytes(b))
-
-      }
-
-      d
+      sqlEngine.packing
     }
 
     resp handle {
@@ -50,5 +39,9 @@ class EngineServiceImpl @Inject() (dao: MetaServiceDao) extends EngineService.Me
 
     resp
   }
+
+  //  def toQuerySql(req: ReportReq): Future[Seq[QuerySql]] = {
+
+  //  }
 
 }

@@ -34,26 +34,26 @@ service MetaService {
 }
 
 service EngineService {
-  list<common.QuerySql> toQuerySql(ReportReq req) throws (common.ServiceException e)
+  list<common.QueryReq> toQueryReqSeq(ReportReq req) throws (common.ServiceException e)
 }
 
 service RootService {
   ReportResp queryReport(ReportReq req) throws (common.ServiceException e)
-  ReportResp executeReport(common.QuerySql req) throws (common.ServiceException e)
+  ReportResp executeReport(common.QueryReq req) throws (common.ServiceException e)
   
   ExecuteResp queryToStaging(ReportReq req) throws (common.ServiceException e)
-  ExecuteResp executeToStaging(common.QuerySql req) throws (common.ServiceException e)
+  ExecuteResp executeToStaging(common.QueryReq req) throws (common.ServiceException e)
   
   string hi(string name)
 }
 
 struct MergerQueryReq {
-  1: common.QuerySql query_sql
+  1: list<common.QueryReq> reqs
+  2: bool is_root_mergering = true
 }
 
 struct MergerQueryResp {
-  1: list<common.Row> rows
-  2: map<common.SHARD_ID, common.ServiceWatcher> watchers
+  1: list<common.QueryResp> resps
 }
 
 service MergerService {

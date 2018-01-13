@@ -12,7 +12,6 @@ trait MainModule extends TwitterModule with BaseModule {
   override def configure: Unit = {
     install(TypesafeConfigModule.fromConfigWithPackage(config, ""))
     bindSingleton[Config].toInstance(config)
-
     injectModule
   }
 

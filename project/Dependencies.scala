@@ -34,7 +34,9 @@ object Dependencies {
     val jsch = "0.1.54"
     val kafka = "0.10.1.2"
 
-    val bonecp = "0.8.0.RELEASE"
+    //val bonecp = "0.8.0.RELEASE"
+    val presto = "0.191"
+    val druid = "1.1.6"
 
   }
 
@@ -107,8 +109,8 @@ object Dependencies {
     "com.twitter" %% "finagle-mysql" % Versions.finagle)
 
   val jdbcDependency = Seq(
-    "com.facebook.presto" % "presto-jdbc" % "0.188",
-    "com.jolbox" % "bonecp" % Versions.bonecp)
+    "com.facebook.presto" % "presto-jdbc" % Versions.presto,
+    "com.alibaba" % "druid" % Versions.druid)
 
   val solrDependency = Seq(
     "com.github.takezoe" %% "solr-scala-client" % Versions.solr)

@@ -46,11 +46,11 @@ class RootServiceImpl @Inject() (meta: MetaService.MethodPerEndpoint) extends Ro
 
   def build(rows: Seq[Row])(fallback: Seq[Row] ⇒ Seq[Row]): Seq[Row] = fallback(rows)
 
-  def executeReport(req: QuerySql): Future[ReportResp] = {
+  def executeReport(req: QueryReq): Future[ReportResp] = {
     ???
   }
 
-  def executeToStaging(req: QuerySql): Future[ExecuteResp] = {
+  def executeToStaging(req: QueryReq): Future[ExecuteResp] = {
     ???
   }
 

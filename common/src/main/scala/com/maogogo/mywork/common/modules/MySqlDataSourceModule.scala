@@ -1,24 +1,33 @@
 package com.maogogo.mywork.common.modules
 
+import com.google.inject.AbstractModule
 import com.google.inject.Provides
 import com.google.inject.Singleton
-import com.maogogo.mywork.common.TransactionsClient
+import com.maogogo.mywork.common.jdbc.ConnectionBuilder
+import com.maogogo.mywork.common.jdbc.druid.DruidConnectionBuilderImpl
 import com.maogogo.mywork.common.utils.ThreeDesUtil
 import com.twitter.finagle.Mysql
 import com.twitter.finagle.client.DefaultPool
 import com.twitter.util.Duration
 import com.typesafe.config.Config
+import com.maogogo.mywork.common.jdbc._
 
-import javax.inject.Named
 import javax.inject.Inject
+import javax.inject.Named
+import com.maogogo.mywork.common.jdbc.twttr.MySqlDataSourcePool
 
-trait DataSourceModule { self ⇒
+class MySqlDataSourceModule extends AbstractModule { self ⇒
+
+  override def configure: Unit = {
+    bind(classOf[MySqlDataSourcePool]).in(classOf[Singleton])
+    bind(classOf[ConnectionBuilder]).to(classOf[DruidConnectionBuilderImpl]).in(classOf[Singleton])
+  }
 
   @Provides @Singleton @Named("shardId")
-  def provideShardId(implicit config: Config): Int = config.getInt("shard.id")
+  def provideShardId(@Inject config: Config): Int = config.getInt("shard.id")
 
   @Provides @Singleton @Named("connections")
-  def getConnections(implicit config: Config): Seq[DataSourcePool] = {
+  def getConnections(@Inject config: Config): Seq[DataSourcePool] = {
 
     val host = config.getString("mysql.host")
     val database = config.getString("mysql.database")
@@ -38,7 +47,6 @@ trait DataSourceModule { self ⇒
       val clients = ((0 until partitions) map { i ⇒
         getConnection(host, username, password, database, pool)
       })
-
       DataSourcePool(partitions, testing, clients)
     }
 

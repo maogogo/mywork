@@ -8,7 +8,7 @@ class ListingSqlEngining(implicit val builder: SqlEngineBuilder) extends SqlEngi
 
   lazy val Log = LoggerFactory.getLogger(getClass)
 
-  def packing: Seq[QuerySql] = {
+  def packing: Seq[QueryReq] = {
     // grouping 分组
     val sqlTables = createSqlTable
     // 创建子查询
@@ -26,7 +26,7 @@ class ListingSqlEngining(implicit val builder: SqlEngineBuilder) extends SqlEngi
     println("params ===>>>> " + getParams(sqlTables))
 
     //TODO(Toan) 这里缺少 sort 和 limit
-    Seq(QuerySql(sql, None, getParams(sqlTables), builder.getAllGroupings.size, builder.headers))
+    Seq(QueryReq(sql, None, getParams(sqlTables), builder.getAllGroupings.size, builder.headers))
   }
 
   /**
@@ -53,9 +53,10 @@ class ListingSqlEngining(implicit val builder: SqlEngineBuilder) extends SqlEngi
 
   /**
    * 获取where条件(这里是第二层的where条件)
+   * TODO(Toan)如果这里有重复的条件有问题, 这里 把 distinct 去掉了 ,要是有重复的时候会有问题
    */
   def getAdapter(sqlTables: Seq[SqlTable]): Option[String] =
-    Option(sqlTables.flatMap(_.getAggregateAdaper).distinct.filterNot(_.isEmpty).mkString(" AND "))
+    Option(sqlTables.flatMap(_.getAggregateAdaper).filterNot(_.isEmpty).mkString(" AND "))
 
   /**
    * 创建SqlTable

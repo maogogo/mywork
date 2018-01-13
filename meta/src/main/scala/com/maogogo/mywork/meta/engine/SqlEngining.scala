@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory
 trait SqlEngining {
 
   val builder: SqlEngineBuilder
-  def packing: Seq[QuerySql]
+  def packing: Seq[QueryReq]
 
 }
 
